@@ -1,0 +1,704 @@
+2025-04-11 11:44:56,390 - INFO - 使用Excel文件: testhomepage.xlsx
+2025-04-11 11:44:56,391 - INFO - 使用 FirecrawlApp API密钥: fc-9c...07af3
+2025-04-11 11:44:56,391 - INFO - 
+开始检查 - 2025-04-11 11:44:56
+2025-04-11 11:44:56,728 - INFO - 
+正在检查主页 [1/21]: https://tardaguila.uy/ganaderia
+2025-04-11 11:44:56,728 - INFO - 备注: 乌拉圭农业网站
+2025-04-11 11:44:56,728 - INFO - 正在使用scrape_url方法获取 https://tardaguila.uy/ganaderia 的链接...
+2025-04-11 11:45:02,207 - INFO - 原始链接数量: 31, 去除自引用后: 31, 过滤后: 31
+2025-04-11 11:45:02,207 - INFO - 发现 31 个链接
+2025-04-11 11:45:02,207 - INFO - 历史链接数量: 0
+2025-04-11 11:45:02,209 - INFO - 发现 31 个新链接:
+2025-04-11 11:45:02,209 - INFO -   - https://tardaguila.uy/indicadores
+2025-04-11 11:45:02,209 - INFO -   - https://tardaguila.uy/component/banners/click/52
+2025-04-11 11:45:02,209 - INFO -   - https://tardaguila.uy/ganaderia/se-ultiman-detalles-para-el-primer-barco-que-saldra-a-israel
+2025-04-11 11:45:02,209 - INFO -   - https://tardaguila.uy/#facebook
+2025-04-11 11:45:02,210 - INFO -   - https://tardaguila.uy/#x
+2025-04-11 11:45:02,210 - INFO -   - https://tardaguila.uy/#linkedin
+2025-04-11 11:45:02,210 - INFO -   - https://tardaguila.uy/#email
+2025-04-11 11:45:02,210 - INFO -   - https://tardaguila.uy/ganaderia/patino-con-una-oferta-con-altibajos-el-mercado-del-gordo-sigue-firme
+2025-04-11 11:45:02,211 - INFO -   - https://tardaguila.uy/ganaderia/la-firmeza-de-china-con-los-precios-y-el-caos-de-eeuu
+2025-04-11 11:45:02,211 - INFO -   - https://www.faxcarne.com/reports/1625
+2025-04-11 11:45:02,211 - INFO -   ... 还有 21 个新链接未显示
+2025-04-11 11:45:02,211 - INFO - 历史链接更新至 31 个
+2025-04-11 11:45:02,214 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:45:17,214 - INFO - 
+正在检查主页 [2/21]: https://blasinayasociados.com/ganaderia/
+2025-04-11 11:45:17,214 - INFO - 备注: 乌拉圭牛肉资讯
+2025-04-11 11:45:17,214 - INFO - 正在使用scrape_url方法获取 https://blasinayasociados.com/ganaderia/ 的链接...
+2025-04-11 11:45:22,445 - INFO - 原始链接数量: 30, 去除自引用后: 30, 过滤后: 30
+2025-04-11 11:45:22,445 - INFO - 发现 30 个链接
+2025-04-11 11:45:22,445 - INFO - 历史链接数量: 0
+2025-04-11 11:45:22,445 - INFO - 发现 30 个新链接:
+2025-04-11 11:45:22,446 - INFO -   - https://www.facebook.com/Blasinayasociados
+2025-04-11 11:45:22,446 - INFO -   - http://www.twitter.com/blasinayasoc/
+2025-04-11 11:45:22,446 - INFO -   - https://www.instagram.com/blasinayasociados/
+2025-04-11 11:45:22,446 - INFO -   - https://www.linkedin.com/company/65282344/admin/
+2025-04-11 11:45:22,446 - INFO -   - https://www.youtube.com/channel/UCxIetoncf6U-fxTr1Ru-0Ig
+2025-04-11 11:45:22,447 - INFO -   - https://soundcloud.com/eblasina
+2025-04-11 11:45:22,447 - INFO -   - https://blasinayasociados.com/feed/
+2025-04-11 11:45:22,447 - INFO -   - https://blasinayasociados.com/
+2025-04-11 11:45:22,447 - INFO -   - https://blasinayasociados.com/?_dnlink=16749&aid=1720&t=1744331952
+2025-04-11 11:45:22,447 - INFO -   - https://blasinayasociados.com/?_dnlink=28107&aid=1720&t=1744331952
+2025-04-11 11:45:22,447 - INFO -   ... 还有 20 个新链接未显示
+2025-04-11 11:45:22,448 - INFO - 历史链接更新至 30 个
+2025-04-11 11:45:22,450 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:45:37,452 - INFO - 
+正在检查主页 [3/21]: https://www.beefcentral.com/news/
+2025-04-11 11:45:37,452 - INFO - 备注: 澳洲最大的牛肉资讯网站，更新澳洲养牛以及全球牛肉新闻，以及活牛价格，预测
+2025-04-11 11:45:37,453 - INFO - 正在使用scrape_url方法获取 https://www.beefcentral.com/news/ 的链接...
+2025-04-11 11:45:44,108 - INFO - 移除了自引用链接: https://www.beefcentral.com/news/
+2025-04-11 11:45:44,109 - INFO - 原始链接数量: 21, 去除自引用后: 20, 过滤后: 20
+2025-04-11 11:45:44,109 - INFO - 发现 20 个链接
+2025-04-11 11:45:44,110 - INFO - 历史链接数量: 0
+2025-04-11 11:45:44,111 - INFO - 发现 20 个新链接:
+2025-04-11 11:45:44,111 - INFO -   - https://www.beefcentral.com/news/#
+2025-04-11 11:45:44,112 - INFO -   - https://www.beefcentral.com/news/quilty-doubles-down-on-bold-2026-cattle-price-prediction/
+2025-04-11 11:45:44,112 - INFO -   - https://www.beefcentral.com/news/recruitment-news/recruitment-new-wave-of-women-chasing-careers-in-ag/
+2025-04-11 11:45:44,113 - INFO -   - https://www.beefcentral.com/news/recruitment-news/
+2025-04-11 11:45:44,113 - INFO -   - https://www.beefcentral.com/news/world-trade-at-historical-pivot-point-reverting-to-law-of-the-jungle/
+2025-04-11 11:45:44,113 - INFO -   - https://www.beefcentral.com/news/world-trade-at-historical-pivot-point-reverting-to-law-of-the-jungle/#comments
+2025-04-11 11:45:44,114 - INFO -   - https://www.beefcentral.com/news/wagyu-excellence-stanbroke-claims-top-honours-in-record-breaking-branded-beef-awards/
+2025-04-11 11:45:44,114 - INFO -   - https://www.beefcentral.com/news/wild-stock-market-currency-swings-as-trump-pauses-higher-tariffs/
+2025-04-11 11:45:44,115 - INFO -   - https://www.beefcentral.com/news/rockhampton-conference-shows-growing-popularity-of-icmj-pics/
+2025-04-11 11:45:44,115 - INFO -   - https://www.beefcentral.com/news/coalition-announces-new-regional-australia-future-fund/
+2025-04-11 11:45:44,116 - INFO -   ... 还有 10 个新链接未显示
+2025-04-11 11:45:44,116 - INFO - 历史链接更新至 20 个
+2025-04-11 11:45:44,121 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:45:59,123 - INFO - 
+正在检查主页 [4/21]: https://bichosdecampo.com/
+2025-04-11 11:45:59,124 - INFO - 备注: 阿根廷养牛以及阿根廷牛肉新闻
+2025-04-11 11:45:59,124 - INFO - 正在使用scrape_url方法获取 https://bichosdecampo.com/ 的链接...
+2025-04-11 11:46:05,947 - INFO - 移除了自引用链接: https://bichosdecampo.com/
+2025-04-11 11:46:05,947 - INFO - 原始链接数量: 75, 去除自引用后: 74, 过滤后: 51
+2025-04-11 11:46:05,947 - INFO - 发现 51 个链接
+2025-04-11 11:46:05,947 - INFO - 历史链接数量: 0
+2025-04-11 11:46:05,948 - INFO - 发现 51 个新链接:
+2025-04-11 11:46:05,948 - INFO -   - https://www.facebook.com/BichosdeCampo
+2025-04-11 11:46:05,948 - INFO -   - https://twitter.com/bichosdecampo
+2025-04-11 11:46:05,948 - INFO -   - https://www.youtube.com/user/BichosDeCampo
+2025-04-11 11:46:05,948 - INFO -   - https://www.instagram.com/bichosdecampo/
+2025-04-11 11:46:05,949 - INFO -   - https://api.whatsapp.com/send?phone=5491128824494&text=Hola,%20quiero%20recibir%20noticias.
+2025-04-11 11:46:05,949 - INFO -   - https://bichosdecampo.com/newsletter/
+2025-04-11 11:46:05,949 - INFO -   - mailto:info@bichosdecampo.com.ar
+2025-04-11 11:46:05,949 - INFO -   - https://bichosdecampo.com/#
+2025-04-11 11:46:05,949 - INFO -   - https://bichosdecampo.com/calamidad-la-paralizacion-de-las-plantas-industriales-de-vicentin-pone-en-riesgo-la-continuidad-de-la-empresa-que-fabrica-el-algodon-estrella/
+2025-04-11 11:46:05,949 - INFO -   - https://bichosdecampo.com/las-pymes-le-ponen-freno-a-atilra-el-sindicato-pretende-cobrarle-a-muchas-industrias-lacteas-aportes-solidarios-que-en-realidad-no-fueron-homologados/
+2025-04-11 11:46:05,950 - INFO -   ... 还有 41 个新链接未显示
+2025-04-11 11:46:05,950 - INFO - 历史链接更新至 51 个
+2025-04-11 11:46:05,952 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:46:20,954 - INFO - 
+正在检查主页 [5/21]: https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias
+2025-04-11 11:46:20,954 - INFO - 备注: 乌拉圭农畜渔业部官方网站
+2025-04-11 11:46:20,954 - INFO - 正在使用scrape_url方法获取 https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias 的链接...
+2025-04-11 11:46:30,934 - INFO - 移除了自引用链接: https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias
+2025-04-11 11:46:30,935 - INFO - 原始链接数量: 30, 去除自引用后: 29, 过滤后: 29
+2025-04-11 11:46:30,935 - INFO - 发现 29 个链接
+2025-04-11 11:46:30,935 - INFO - 历史链接数量: 0
+2025-04-11 11:46:30,936 - INFO - 发现 29 个新链接:
+2025-04-11 11:46:30,936 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias#contenido
+2025-04-11 11:46:30,936 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias#nav-target
+2025-04-11 11:46:30,936 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/calendario-actividades
+2025-04-11 11:46:30,936 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/calendario-actividades-anteriores
+2025-04-11 11:46:30,936 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/boletines
+2025-04-11 11:46:30,937 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/publicaciones
+2025-04-11 11:46:30,937 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/comunicados
+2025-04-11 11:46:30,938 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/convocatorias
+2025-04-11 11:46:30,938 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/campanas
+2025-04-11 11:46:30,938 - INFO -   - https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias/continua-salto-gira-del-equipo-trabajo-del-mgap
+2025-04-11 11:46:30,938 - INFO -   ... 还有 19 个新链接未显示
+2025-04-11 11:46:30,938 - INFO - 历史链接更新至 29 个
+2025-04-11 11:46:30,941 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:46:45,942 - INFO - 
+正在检查主页 [6/21]: https://www.gov.br/agricultura/pt-br/assuntos/noticias
+2025-04-11 11:46:45,942 - INFO - 备注: 巴西农业部
+2025-04-11 11:46:45,943 - INFO - 正在使用scrape_url方法获取 https://www.gov.br/agricultura/pt-br/assuntos/noticias 的链接...
+2025-04-11 11:46:53,445 - INFO - 原始链接数量: 88, 去除自引用后: 88, 过滤后: 88
+2025-04-11 11:46:53,446 - INFO - 发现 88 个链接
+2025-04-11 11:46:53,446 - INFO - 历史链接数量: 0
+2025-04-11 11:46:53,446 - INFO - 发现 88 个新链接:
+2025-04-11 11:46:53,447 - INFO -   - https://www.gov.br/agricultura/pt-br/assuntos/noticias#
+2025-04-11 11:46:53,447 - INFO -   - https://www.gov.br/agricultura/pt-br/assuntos/noticias/mapa-participa-de-seminario-sobre-o-cooperativismo-no-brasil
+2025-04-11 11:46:53,447 - INFO -   - https://www.gov.br/agricultura/pt-br/@@search?SearchableText=Rio%20de%20Janeiro
+2025-04-11 11:46:53,448 - INFO -   - https://www.gov.br/agricultura/pt-br/assuntos/noticias/ministro-carlos-favaro-anuncia-apoio-do-mapa-para-a-producao-de-arroz-no-xingu
+2025-04-11 11:46:53,448 - INFO -   - https://www.gov.br/agricultura/pt-br/@@search?SearchableText=Distrito%20Federal
+2025-04-11 11:46:53,448 - INFO -   - https://www.gov.br/agricultura/pt-br/@@search?SearchableText=Mato%20Grosso
+2025-04-11 11:46:53,448 - INFO -   - https://www.gov.br/agricultura/pt-br/assuntos/noticias/brasil-exporta-us-15-6-bilhoes-em-produtos-do-agronegocio-em-marco
+2025-04-11 11:46:53,448 - INFO -   - https://www.gov.br/agricultura/pt-br/@@search?SearchableText=Acre
+2025-04-11 11:46:53,449 - INFO -   - https://www.gov.br/agricultura/pt-br/@@search?SearchableText=Bahia
+2025-04-11 11:46:53,449 - INFO -   - https://www.gov.br/agricultura/pt-br/@@search?SearchableText=Paran%C3%A1
+2025-04-11 11:46:53,449 - INFO -   ... 还有 78 个新链接未显示
+2025-04-11 11:46:53,449 - INFO - 历史链接更新至 88 个
+2025-04-11 11:46:53,452 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:47:08,453 - INFO - 
+正在检查主页 [7/21]: https://www.noticiasagropecuarias.com/category/ganaderia/
+2025-04-11 11:47:08,454 - INFO - 备注: 阿根廷本土牛肉资讯网站
+2025-04-11 11:47:08,454 - INFO - 正在使用scrape_url方法获取 https://www.noticiasagropecuarias.com/category/ganaderia/ 的链接...
+2025-04-11 11:47:20,081 - INFO - 移除了自引用链接: https://www.noticiasagropecuarias.com/category/ganaderia/
+2025-04-11 11:47:20,082 - INFO - 原始链接数量: 20, 去除自引用后: 19, 过滤后: 10
+2025-04-11 11:47:20,082 - INFO - 发现 10 个链接
+2025-04-11 11:47:20,082 - INFO - 历史链接数量: 0
+2025-04-11 11:47:20,083 - INFO - 发现 10 个新链接:
+2025-04-11 11:47:20,083 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/10/crece-la-importacion-de-carne-porcina-desde-brasil-y-se-agudiza-el-malestar-entre-los-productores-argentinos/
+2025-04-11 11:47:20,083 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/10/crece-el-optimismo-de-los-empresarios-crea-para-los-rubros-ganaderia-y-lecheria/
+2025-04-11 11:47:20,083 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/09/rumbo-a-la-sial-china-2025/
+2025-04-11 11:47:20,083 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/09/ravettino-una-enfermedad-sanitaria-nunca-es-una-oportunidad-para-un-pais/
+2025-04-11 11:47:20,084 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/09/record-en-el-consumo-de-carne-de-porcino/
+2025-04-11 11:47:20,084 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/08/barrera-sanitaria-diputados-patagonicos-presentaron-un-pedido-de-informe-al-congreso/
+2025-04-11 11:47:20,084 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/08/86563/
+2025-04-11 11:47:20,084 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/07/exportaciones-de-carne-sigue-firme-la-demanda-en-un-mercado-en-alza/
+2025-04-11 11:47:20,084 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/07/carnes-argentina-sigue-abriendo-mercados-ahora-llegara-a-albania/
+2025-04-11 11:47:20,085 - INFO -   - https://www.noticiasagropecuarias.com/2025/04/06/historico-remate-en-banco-nacion-gran-convocatoria-y-exito-rotundo/
+2025-04-11 11:47:20,085 - INFO - 历史链接更新至 10 个
+2025-04-11 11:47:20,088 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:47:35,090 - INFO - 
+正在检查主页 [8/21]: https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/
+2025-04-11 11:47:35,090 - INFO - 备注: 巴西本土牛肉资讯，包括开关资讯，牛肉价格，工厂动态等等
+2025-04-11 11:47:35,090 - INFO - 正在使用scrape_url方法获取 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/ 的链接...
+2025-04-11 11:48:35,935 - ERROR - 从页面提取链接时出错 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/: Request Timeout: Failed to scrape URL as the request timed out. Request timed out - No additional error details provided.
+2025-04-11 11:48:35,936 - INFO - 请求超时，等待 15 秒后重试...
+2025-04-11 11:48:50,937 - INFO - 第 1 次重试，等待 15 秒...
+2025-04-11 11:49:05,938 - INFO - 正在使用scrape_url方法获取 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/ 的链接...
+2025-04-11 11:50:06,810 - ERROR - 从页面提取链接时出错 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/: Request Timeout: Failed to scrape URL as the request timed out. Request timed out - No additional error details provided.
+2025-04-11 11:50:06,811 - INFO - 请求超时，等待 15 秒后重试...
+2025-04-11 11:50:21,812 - INFO - 第 2 次重试，等待 15 秒...
+2025-04-11 11:50:36,814 - INFO - 正在使用scrape_url方法获取 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/ 的链接...
+2025-04-11 11:52:05,892 - ERROR - 从页面提取链接时出错 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/: Request Timeout: Failed to scrape URL as the request timed out. Request timed out - No additional error details provided.
+2025-04-11 11:52:05,892 - INFO - 请求超时，等待 15 秒后重试...
+2025-04-11 11:52:20,893 - INFO - 第 3 次重试，等待 15 秒...
+2025-04-11 11:52:35,895 - INFO - 正在使用scrape_url方法获取 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/ 的链接...
+2025-04-11 11:53:36,678 - ERROR - 从页面提取链接时出错 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/: Request Timeout: Failed to scrape URL as the request timed out. Request timed out - No additional error details provided.
+2025-04-11 11:53:36,679 - WARNING - 无法处理的错误，放弃获取链接
+2025-04-11 11:53:36,680 - INFO - 发现 0 个链接
+2025-04-11 11:53:36,681 - INFO - 历史链接数量: 0
+2025-04-11 11:53:36,682 - INFO - 没有发现新链接
+2025-04-11 11:53:36,683 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:53:51,684 - INFO - 
+正在检查主页 [9/21]: https://www.souagro.net/categoria/editoriais/pecuaria/
+2025-04-11 11:53:51,684 - INFO - 备注: 巴西本土牛肉资讯，包括开关资讯，牛肉价格，工厂动态等等
+2025-04-11 11:53:51,685 - INFO - 正在使用scrape_url方法获取 https://www.souagro.net/categoria/editoriais/pecuaria/ 的链接...
+2025-04-11 11:53:56,097 - INFO - 原始链接数量: 17, 去除自引用后: 17, 过滤后: 14
+2025-04-11 11:53:56,098 - INFO - 发现 14 个链接
+2025-04-11 11:53:56,099 - INFO - 历史链接数量: 0
+2025-04-11 11:53:56,099 - INFO - 发现 14 个新链接:
+2025-04-11 11:53:56,099 - INFO -   - https://souagro.net/noticia/2025/04/vaca-campea-em-lactacao-impressiona-com-64-850-kg-de-leite-por-dia/
+2025-04-11 11:53:56,099 - INFO -   - https://souagro.net/noticia/2025/04/brasil-esta-perto-de-ser-reconhecido-livre-de-aftosa-sem-vacinacao/
+2025-04-11 11:53:56,100 - INFO -   - https://souagro.net/noticia/2025/04/conheca-a-fazenda-sem-vacas-no-pasto-e-com-direito-a-banho-todos-os-dias/
+2025-04-11 11:53:56,100 - INFO -   - https://souagro.net/noticia/2025/04/estiagem-prolongada-e-calor-intenso-ameacam-producao-de-leite/
+2025-04-11 11:53:56,100 - INFO -   - https://souagro.net/noticia/2025/04/adapar-orienta-produtores-sobre-exames-obrigatorios-de-brucelose-e-tuberculose/
+2025-04-11 11:53:56,100 - INFO -   - https://souagro.net/noticia/2025/03/estado-tem-crescimento-de-112-no-abate-de-novilhos/
+2025-04-11 11:53:56,100 - INFO -   - https://souagro.net/noticia/2025/03/temporada-de-desmama-mostra-o-rebanho-que-o-pecuarista-tera-no-futuro/
+2025-04-11 11:53:56,101 - INFO -   - https://souagro.net/noticia/2025/03/gases-do-efeito-estufa-estao-sob-monitoramento/
+2025-04-11 11:53:56,101 - INFO -   - https://souagro.net/noticia/2025/03/produtores-de-leite-recebem-o-titulo-de-criador-supremo/
+2025-04-11 11:53:56,101 - INFO -   - https://souagro.net/noticia/2025/03/abates-de-suinos-e-aves-impulsionam-vocacao-multiproteina-de-estado/
+2025-04-11 11:53:56,101 - INFO -   ... 还有 4 个新链接未显示
+2025-04-11 11:53:56,101 - INFO - 历史链接更新至 14 个
+2025-04-11 11:53:56,105 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:54:11,106 - INFO - 
+正在检查主页 [10/21]: https://globorural.globo.com/agricultura/
+2025-04-11 11:54:11,106 - INFO - 备注: 巴西媒体资讯
+2025-04-11 11:54:11,106 - INFO - 正在使用scrape_url方法获取 https://globorural.globo.com/agricultura/ 的链接...
+2025-04-11 11:54:18,559 - INFO - 移除了自引用链接: https://globorural.globo.com/agricultura/
+2025-04-11 11:54:18,560 - INFO - 原始链接数量: 45, 去除自引用后: 44, 过滤后: 44
+2025-04-11 11:54:18,560 - INFO - 发现 44 个链接
+2025-04-11 11:54:18,560 - INFO - 历史链接数量: 0
+2025-04-11 11:54:18,560 - INFO - 发现 44 个新链接:
+2025-04-11 11:54:18,561 - INFO -   - https://www.globo.com/?utm_source=barraGCOM
+2025-04-11 11:54:18,561 - INFO -   - https://g1.globo.com/?utm_source=barraGCOM
+2025-04-11 11:54:18,561 - INFO -   - https://ge.globo.com/?utm_source=barraGCOM
+2025-04-11 11:54:18,561 - INFO -   - https://gshow.globo.com/?utm_source=barraGCOM
+2025-04-11 11:54:18,561 - INFO -   - https://globoplay.globo.com/?utm_source=barraGCOM
+2025-04-11 11:54:18,562 - INFO -   - https://valor.globo.com/?utm_source=barraGCOM
+2025-04-11 11:54:18,562 - INFO -   - https://www.globo.com/todos-os-sites.html?utm_source=barraGCOM
+2025-04-11 11:54:18,562 - INFO -   - https://globorural.globo.com/agricultura/noticia/2025/04/produtores-do-rs-colhem-metade-da-safra-de-soja-202425.ghtml
+2025-04-11 11:54:18,562 - INFO -   - https://globorural.globo.com/agricultura/noticia/2025/04/projecao-de-estoques-de-soja-nos-eua-sofre-corte-para-a-safra-202425.ghtml
+2025-04-11 11:54:18,562 - INFO -   - https://globorural.globo.com/agricultura/noticia/2025/04/ibge-eleva-estimativa-para-safra-de-graos-de-2025-para-3276-milhoes-de-toneladas.ghtml
+2025-04-11 11:54:18,563 - INFO -   ... 还有 34 个新链接未显示
+2025-04-11 11:54:18,563 - INFO - 历史链接更新至 44 个
+2025-04-11 11:54:18,567 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:54:33,568 - INFO - 
+正在检查主页 [11/21]: https://www.comprerural.com/categorias/noticias/
+2025-04-11 11:54:33,569 - INFO - 备注: 巴西媒体资讯
+2025-04-11 11:54:33,569 - INFO - 正在使用scrape_url方法获取 https://www.comprerural.com/categorias/noticias/ 的链接...
+2025-04-11 11:54:38,767 - INFO - 移除了自引用链接: https://www.comprerural.com/categorias/noticias/
+2025-04-11 11:54:38,768 - INFO - 原始链接数量: 26, 去除自引用后: 25, 过滤后: 22
+2025-04-11 11:54:38,768 - INFO - 发现 22 个链接
+2025-04-11 11:54:38,768 - INFO - 历史链接数量: 0
+2025-04-11 11:54:38,768 - INFO - 发现 22 个新链接:
+2025-04-11 11:54:38,768 - INFO -   - https://www.comprerural.com/
+2025-04-11 11:54:38,769 - INFO -   - https://www.comprerural.com/casa-branca-esclarece-que-tarifas-sobre-a-china-chegam-a-145/
+2025-04-11 11:54:38,769 - INFO -   - https://www.comprerural.com/favaro-renegociacao-de-divida-de-produtor-rural-gaucho-nao-sera-generalizada/
+2025-04-11 11:54:38,769 - INFO -   - https://www.comprerural.com/categorias/agricultura/
+2025-04-11 11:54:38,769 - INFO -   - https://www.comprerural.com/categorias/artigos/
+2025-04-11 11:54:38,770 - INFO -   - https://www.comprerural.com/categorias/assessoria-de-imprensa/
+2025-04-11 11:54:38,770 - INFO -   - https://www.comprerural.com/categorias/casas-de-leiloes/
+2025-04-11 11:54:38,770 - INFO -   - https://www.comprerural.com/categorias/cavalos/
+2025-04-11 11:54:38,770 - INFO -   - https://www.comprerural.com/categorias/cotacoes/
+2025-04-11 11:54:38,771 - INFO -   - https://www.comprerural.com/categorias/cotidiano/
+2025-04-11 11:54:38,771 - INFO -   ... 还有 12 个新链接未显示
+2025-04-11 11:54:38,771 - INFO - 历史链接更新至 22 个
+2025-04-11 11:54:38,775 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:54:53,776 - INFO - 
+正在检查主页 [12/21]: https://eurocarne.com/noticias
+2025-04-11 11:54:53,776 - INFO - 备注: 西班牙和拉丁美洲肉类资讯
+2025-04-11 11:54:53,777 - INFO - 正在使用scrape_url方法获取 https://eurocarne.com/noticias 的链接...
+2025-04-11 11:54:58,181 - INFO - 移除了自引用链接: https://eurocarne.com/noticias
+2025-04-11 11:54:58,181 - INFO - 原始链接数量: 101, 去除自引用后: 100, 过滤后: 99
+2025-04-11 11:54:58,181 - INFO - 发现 99 个链接
+2025-04-11 11:54:58,181 - INFO - 历史链接数量: 0
+2025-04-11 11:54:58,183 - INFO - 发现 99 个新链接:
+2025-04-11 11:54:58,183 - INFO -   - https://eurocarne.com/track/tid/2808f948f9c98be56be491343fe37739
+2025-04-11 11:54:58,183 - INFO -   - https://eurocarne.com/track/tid/d8224b2ac7e7eff1149e39f4dafa101f
+2025-04-11 11:54:58,183 - INFO -   - https://eurocarne.com/
+2025-04-11 11:54:58,183 - INFO -   - https://eurocarne.com/info-suscribirse
+2025-04-11 11:54:58,184 - INFO -   - https://eurocarne.com/info-publicidad
+2025-04-11 11:54:58,184 - INFO -   - https://eurocarne.com/info-contacto
+2025-04-11 11:54:58,184 - INFO -   - https://twitter.com/eurocarne
+2025-04-11 11:54:58,184 - INFO -   - https://www.facebook.com/redaccion.eurocarne
+2025-04-11 11:54:58,184 - INFO -   - https://www.linkedin.com/company/revistaeurocarne
+2025-04-11 11:54:58,185 - INFO -   - https://www.youtube.com/user/eurocarnevideo?feature=watch
+2025-04-11 11:54:58,185 - INFO -   ... 还有 89 个新链接未显示
+2025-04-11 11:54:58,185 - INFO - 历史链接更新至 99 个
+2025-04-11 11:54:58,189 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:55:13,189 - INFO - 
+正在检查主页 [13/21]: https://www.farmnews.com.br/category/mercado/
+2025-04-11 11:55:13,190 - INFO - 备注: 巴西行业资讯
+2025-04-11 11:55:13,190 - INFO - 正在使用scrape_url方法获取 https://www.farmnews.com.br/category/mercado/ 的链接...
+2025-04-11 11:55:17,869 - INFO - 原始链接数量: 19, 去除自引用后: 19, 过滤后: 15
+2025-04-11 11:55:17,870 - INFO - 发现 15 个链接
+2025-04-11 11:55:17,870 - INFO - 历史链接数量: 0
+2025-04-11 11:55:17,870 - INFO - 发现 15 个新链接:
+2025-04-11 11:55:17,870 - INFO -   - https://chat.whatsapp.com/GgFmdTOBSNU80mDUzBOuTd
+2025-04-11 11:55:17,870 - INFO -   - https://www.farmnews.com.br/mercado/estoque-mundial-de-milho-nova-revisao-de-queda-em-abril-de-2025/
+2025-04-11 11:55:17,871 - INFO -   - https://www.farmnews.com.br/mercado/importacao-de-fertilizantes-pelo-brasil-embarque-e-preco-no-1o-trimestre-de-2025/
+2025-04-11 11:55:17,871 - INFO -   - https://www.farmnews.com.br/mercado/preco-futuro-do-milho-e-da-soja-para-2025-e-2026-frente-ao-fisico-em-abril-9/
+2025-04-11 11:55:17,871 - INFO -   - https://www.farmnews.com.br/mercado/preco-futuro-do-boi-gordo-para-maio-de-2025-volta-a-se-aproximar-da-maxima/
+2025-04-11 11:55:17,871 - INFO -   - https://www.farmnews.com.br/mercado/compra-de-carne-bovina-do-brasil-pelos-eua-foi-o-mais-alto-da-historia-em-marco-de-2025/
+2025-04-11 11:55:17,871 - INFO -   - https://www.farmnews.com.br/mercado/preco-futuro-do-milho-frente-ao-fisico-dados-de-abril-8/
+2025-04-11 11:55:17,872 - INFO -   - https://www.farmnews.com.br/mercado/preco-do-bezerro-inicia-abril-em-alta-e-no-maior-valor-medio-desde-marco-de-2022/
+2025-04-11 11:55:17,872 - INFO -   - https://www.farmnews.com.br/mercado/preco-futuro-do-boi-gordo-frente-ao-fisico-em-abril-7/
+2025-04-11 11:55:17,872 - INFO -   - https://www.farmnews.com.br/mercado/exportacao-de-carne-bovina-dados-da-primeira-semana-de-abril-de-2025/
+2025-04-11 11:55:17,872 - INFO -   ... 还有 5 个新链接未显示
+2025-04-11 11:55:17,872 - INFO - 历史链接更新至 15 个
+2025-04-11 11:55:17,877 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:55:32,878 - INFO - 
+正在检查主页 [14/21]: https://www.theagribiz.com/agribuzz/
+2025-04-11 11:55:32,878 - INFO - 备注: 巴西媒体资讯
+2025-04-11 11:55:32,879 - INFO - 正在使用scrape_url方法获取 https://www.theagribiz.com/agribuzz/ 的链接...
+2025-04-11 11:55:36,873 - INFO - 移除了自引用链接: https://www.theagribiz.com/agribuzz/
+2025-04-11 11:55:36,873 - INFO - 原始链接数量: 11, 去除自引用后: 10, 过滤后: 10
+2025-04-11 11:55:36,873 - INFO - 发现 10 个链接
+2025-04-11 11:55:36,873 - INFO - 历史链接数量: 0
+2025-04-11 11:55:36,873 - INFO - 发现 10 个新链接:
+2025-04-11 11:55:36,874 - INFO -   - https://www.theagribiz.com/agribuzz/o-balde-de-agua-fria-no-mercado-de-cbios/
+2025-04-11 11:55:36,874 - INFO -   - https://www.theagribiz.com/agribuzz/tarifaco-de-trump-deve-gerar-impacto-bilionario-no-suco-de-laranja/
+2025-04-11 11:55:36,874 - INFO -   - https://www.theagribiz.com/agribuzz/grupo-safras-confirma-pedido-de-recuperacao-judicial/
+2025-04-11 11:55:36,874 - INFO -   - https://www.theagribiz.com/agribuzz/protesto-na-br-163-barra-exportacao-de-70-mil-toneladas-por-dia/
+2025-04-11 11:55:36,875 - INFO -   - https://www.theagribiz.com/agribuzz/milho-pode-abocanhar-40-da-producao-de-etanol-preve-fs/
+2025-04-11 11:55:36,875 - INFO -   - https://www.theagribiz.com/agribuzz/marfrig-levanta-r-15-bi-com-divida-mais-longa-de-sua-historia/
+2025-04-11 11:55:36,875 - INFO -   - https://www.theagribiz.com/agribuzz/mato-grosso-concentra-30-das-recuperacoes-judiciais-de-agricultores-mostra-serasa/
+2025-04-11 11:55:36,875 - INFO -   - https://www.theagribiz.com/agribuzz/eua-terao-a-maior-area-de-milho-em-cinco-anos/
+2025-04-11 11:55:36,875 - INFO -   - https://www.theagribiz.com/agribuzz/jbs-vai-investir-us-100-milhoes-em-duas-fabricas-no-vietna/
+2025-04-11 11:55:36,875 - INFO -   - https://www.theagribiz.com/agribuzz/sem-japao-frigorificos-comemoram-abertura-do-vietna/
+2025-04-11 11:55:36,876 - INFO - 历史链接更新至 10 个
+2025-04-11 11:55:36,881 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:55:51,882 - INFO - 
+正在检查主页 [15/21]: https://www.agriland.ie/latest-farming-news/
+2025-04-11 11:55:51,882 - INFO - 备注: 爱尔兰最大的农业新闻网站，更新全球肉类新闻
+2025-04-11 11:55:51,884 - INFO - 正在使用scrape_url方法获取 https://www.agriland.ie/latest-farming-news/ 的链接...
+2025-04-11 11:55:56,852 - INFO - 原始链接数量: 50, 去除自引用后: 50, 过滤后: 47
+2025-04-11 11:55:56,852 - INFO - 发现 47 个链接
+2025-04-11 11:55:56,853 - INFO - 历史链接数量: 0
+2025-04-11 11:55:56,853 - INFO - 发现 47 个新链接:
+2025-04-11 11:55:56,853 - INFO -   - https://www.agriland.ie/farming-news/high-rate-of-bvd-positives-in-fermanagh-and-armagh/
+2025-04-11 11:55:56,853 - INFO -   - https://www.agriland.ie/farming-news/watch-forestry-in-ireland-is-over-regulated-keane/
+2025-04-11 11:55:56,854 - INFO -   - https://www.haystack.ie/?utm_source=agriland&utm_campaign=in_app_stream&utm_medium=widget_logo
+2025-04-11 11:55:56,854 - INFO -   - http://www.haystack.ie/tractors/for-sale/2018-john-deere-5075e?utm_source=agriland&utm_campaign=in_app_stream&utm_medium=widget
+2025-04-11 11:55:56,854 - INFO -   - http://www.haystack.ie/tractors/for-sale/kubota-b7100-compact-tractor-with-loader?utm_source=agriland&utm_campaign=in_app_stream&utm_medium=widget
+2025-04-11 11:55:56,854 - INFO -   - http://www.haystack.ie/beef-cattle/for-sale/pedigree-hereford-bulls-2?utm_source=agriland&utm_campaign=in_app_stream&utm_medium=widget
+2025-04-11 11:55:56,854 - INFO -   - https://www.agriland.ie/farming-news/nematodirus-forecast-issued-by-the-department-3/
+2025-04-11 11:55:56,855 - INFO -   - https://www.agriland.ie/farming-news/ifa-reaches-agreements-with-esb-and-eirgrid/
+2025-04-11 11:55:56,855 - INFO -   - https://www.agriland.ie/farming-news/watch-changing-land-use-a-good-news-story-odonoghue/
+2025-04-11 11:55:56,855 - INFO -   - https://www.agriland.ie/farming-news/river-blackwater-catchment-series-profit-sustainability/
+2025-04-11 11:55:56,855 - INFO -   ... 还有 37 个新链接未显示
+2025-04-11 11:55:56,855 - INFO - 历史链接更新至 47 个
+2025-04-11 11:55:56,860 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:56:11,862 - INFO - 
+正在检查主页 [16/21]: https://www.thebeefsite.com/latest?page=1
+2025-04-11 11:56:11,862 - INFO - 备注: 全球牛肉行业新闻及市场报告
+2025-04-11 11:56:11,863 - INFO - 正在使用scrape_url方法获取 https://www.thebeefsite.com/latest?page=1 的链接...
+2025-04-11 11:56:20,883 - INFO - 移除了自引用链接: https://www.thebeefsite.com/latest?page=1
+2025-04-11 11:56:20,884 - INFO - 原始链接数量: 36, 去除自引用后: 35, 过滤后: 35
+2025-04-11 11:56:20,884 - INFO - 发现 35 个链接
+2025-04-11 11:56:20,884 - INFO - 历史链接数量: 0
+2025-04-11 11:56:20,884 - INFO - 发现 35 个新链接:
+2025-04-11 11:56:20,885 - INFO -   - https://www.thebeefsite.com/news/relief-for-spains-feed-makers-as-eu-delays-tariff-on-us-corn
+2025-04-11 11:56:20,885 - INFO -   - https://www.thebeefsite.com/markets
+2025-04-11 11:56:20,885 - INFO -   - https://www.thebeefsite.com/markets/market-trends
+2025-04-11 11:56:20,885 - INFO -   - https://www.thebeefsite.com/markets/market-trends/feed-markets
+2025-04-11 11:56:20,886 - INFO -   - https://www.thebeefsite.com/news/hungary-suggests-biological-attack-could-be-source-of-fmd-outbreak
+2025-04-11 11:56:20,886 - INFO -   - https://www.thebeefsite.com/health-disease
+2025-04-11 11:56:20,886 - INFO -   - https://www.thebeefsite.com/health-disease/notfiable-diseases
+2025-04-11 11:56:20,886 - INFO -   - https://www.thebeefsite.com/health-disease/notfiable-diseases/foot-and-mouth-disease
+2025-04-11 11:56:20,887 - INFO -   - https://www.thebeefsite.com/news/us-beef-exports-down-over-last-year-usmef
+2025-04-11 11:56:20,887 - INFO -   - https://www.thebeefsite.com/markets/trade
+2025-04-11 11:56:20,887 - INFO -   ... 还有 25 个新链接未显示
+2025-04-11 11:56:20,887 - INFO - 历史链接更新至 35 个
+2025-04-11 11:56:20,892 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:56:35,893 - INFO - 
+正在检查主页 [17/21]: https://www.mla.com.au/news-and-events/industry-news/
+2025-04-11 11:56:35,893 - INFO - 备注: 红肉和畜牧业新闻、研究，牛羊市场
+2025-04-11 11:56:35,893 - INFO - 正在使用scrape_url方法获取 https://www.mla.com.au/news-and-events/industry-news/ 的链接...
+2025-04-11 11:56:42,812 - INFO - 原始链接数量: 42, 去除自引用后: 42, 过滤后: 42
+2025-04-11 11:56:42,813 - INFO - 发现 42 个链接
+2025-04-11 11:56:42,813 - INFO - 历史链接数量: 0
+2025-04-11 11:56:42,813 - INFO - 发现 42 个新链接:
+2025-04-11 11:56:42,813 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/#navigation-container
+2025-04-11 11:56:42,814 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/#content
+2025-04-11 11:56:42,814 - INFO -   - https://www.mla.com.au/news-and-events/
+2025-04-11 11:56:42,814 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/#
+2025-04-11 11:56:42,815 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/goat-exports-remain-strong-despite-flood-impacts/
+2025-04-11 11:56:42,815 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/11042025weekly-cattle-and-sheep-market-wrap/
+2025-04-11 11:56:42,815 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/applications-for-the-2025-26-producer-demonstration-sites-project-call-are-now-open/
+2025-04-11 11:56:42,815 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/record-surge-in-the-national-mutton-indicator/
+2025-04-11 11:56:42,816 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/farm-smarter-not-harder-new-project-to-help-elevate-wa-beef-businesses/
+2025-04-11 11:56:42,816 - INFO -   - https://www.mla.com.au/news-and-events/industry-news/soil-fertility-jewel-in-crown-at-murdeduke/
+2025-04-11 11:56:42,816 - INFO -   ... 还有 32 个新链接未显示
+2025-04-11 11:56:42,817 - INFO - 历史链接更新至 42 个
+2025-04-11 11:56:42,823 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:56:57,824 - INFO - 
+正在检查主页 [18/21]: https://www.canadiancattlemen.ca/
+2025-04-11 11:56:57,825 - INFO - 备注: 加拿大牛肉业协会，更新农业新闻
+2025-04-11 11:56:57,825 - INFO - 正在使用scrape_url方法获取 https://www.canadiancattlemen.ca/ 的链接...
+2025-04-11 11:57:01,999 - INFO - 原始链接数量: 42, 去除自引用后: 42, 过滤后: 42
+2025-04-11 11:57:01,999 - INFO - 发现 42 个链接
+2025-04-11 11:57:02,000 - INFO - 历史链接数量: 0
+2025-04-11 11:57:02,000 - INFO - 发现 42 个新链接:
+2025-04-11 11:57:02,000 - INFO -   - https://www.canadiancattlemen.ca/daily/
+2025-04-11 11:57:02,000 - INFO -   - https://www.canadiancattlemen.ca/features/
+2025-04-11 11:57:02,000 - INFO -   - https://www.canadiancattlemen.ca/succession/
+2025-04-11 11:57:02,000 - INFO -   - https://www.canadiancattlemen.ca/features/ranch-succession-part-1-sibling-dynamics-and-cousin-consortiums/
+2025-04-11 11:57:02,001 - INFO -   - https://www.canadiancattlemen.ca/crops/cereals/barley/
+2025-04-11 11:57:02,001 - INFO -   - https://www.canadiancattlemen.ca/livestock/beef-cattle/
+2025-04-11 11:57:02,001 - INFO -   - https://www.canadiancattlemen.ca/crops/corn/
+2025-04-11 11:57:02,001 - INFO -   - https://www.canadiancattlemen.ca/crops/pulses/lentils/
+2025-04-11 11:57:02,001 - INFO -   - https://www.canadiancattlemen.ca/livestock/
+2025-04-11 11:57:02,002 - INFO -   - https://www.canadiancattlemen.ca/markets/
+2025-04-11 11:57:02,002 - INFO -   ... 还有 32 个新链接未显示
+2025-04-11 11:57:02,002 - INFO - 历史链接更新至 42 个
+2025-04-11 11:57:02,008 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:57:17,009 - INFO - 
+正在检查主页 [19/21]: https://www.elobservador.com.uy/argentina
+2025-04-11 11:57:17,009 - INFO - 备注: 乌拉圭权威新闻网站，在农业板块有肉类新闻更新
+2025-04-11 11:57:17,010 - INFO - 正在使用scrape_url方法获取 https://www.elobservador.com.uy/argentina 的链接...
+2025-04-11 11:57:24,321 - INFO - 原始链接数量: 82, 去除自引用后: 82, 过滤后: 82
+2025-04-11 11:57:24,321 - INFO - 发现 82 个链接
+2025-04-11 11:57:24,321 - INFO - 历史链接数量: 0
+2025-04-11 11:57:24,322 - INFO - 发现 82 个新链接:
+2025-04-11 11:57:24,322 - INFO -   - https://www.elobservador.com.uy/argentina/politica/tercer-paro-general-contra-javier-milei-que-dicen-el-gobierno-y-la-cgt-n5993870
+2025-04-11 11:57:24,322 - INFO -   - https://www.elobservador.com.uy/argentina/economia-y-negocios/no-mas-carne-argentina-contrapunto-las-declaraciones-la-secretaria-agricultura-estados-unidos-n5993891
+2025-04-11 11:57:24,322 - INFO -   - https://www.elobservador.com.uy/argentina/politica/paso-unidad-y-candidatura-la-mirada-cfk-la-ruptura-del-peronismo-bonaerense-n5993863
+2025-04-11 11:57:24,322 - INFO -   - https://www.elobservador.com.uy/argentina/economia-y-negocios/el-bcra-renovo-el-swap-china-us-5000-millones-12-meses-adicionales-n5993856
+2025-04-11 11:57:24,323 - INFO -   - https://www.elobservador.com.uy/argentina/politica/el-gobierno-evalua-levantar-el-cepo-cambiario-agosto-que-sea-un-eje-la-campana-electoral-n5993748
+2025-04-11 11:57:24,323 - INFO -   - https://www.elobservador.com.uy/espana/impacto-global/sorpresa-vaticano-el-papa-francisco-visita-la-basilica-san-pedro-vestido-una-camiseta-y-un-poncho-n5993850
+2025-04-11 11:57:24,323 - INFO -   - https://www.elobservador.com.uy/argentina/sociedad/violencia-el-paro-la-cgt-ataques-colectivos-bahia-blanca-comodoro-rivadavia-y-buenos-aires-n5993830
+2025-04-11 11:57:24,323 - INFO -   - https://www.elobservador.com.uy/argentina/politica/el-secretario-del-tesoro-eeuu-visitara-argentina-respaldar-las-reformas-economicas-javier-milei-n5993810
+2025-04-11 11:57:24,324 - INFO -   - https://www.elobservador.com.uy/argentina/el-observador-radio/martin-redrado-el-acuerdo-el-fmi-busca-devolver-los-dolares-manoteados-al-banco-central-n5993845
+2025-04-11 11:57:24,324 - INFO -   - https://www.elobservador.com.uy/argentina/politica/diputados-comenzo-la-batalla-el-control-la-comision-investigadora-libra-n5993828
+2025-04-11 11:57:24,324 - INFO -   ... 还有 72 个新链接未显示
+2025-04-11 11:57:24,324 - INFO - 历史链接更新至 82 个
+2025-04-11 11:57:24,331 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:57:39,332 - INFO - 
+正在检查主页 [20/21]: https://www.batimes.com.ar/topics/agriculture
+2025-04-11 11:57:39,332 - INFO - 备注: 阿根廷农业资讯门户网站
+2025-04-11 11:57:39,333 - INFO - 正在使用scrape_url方法获取 https://www.batimes.com.ar/topics/agriculture 的链接...
+2025-04-11 11:57:47,503 - INFO - 原始链接数量: 62, 去除自引用后: 62, 过滤后: 62
+2025-04-11 11:57:47,503 - INFO - 发现 62 个链接
+2025-04-11 11:57:47,503 - INFO - 历史链接数量: 0
+2025-04-11 11:57:47,503 - INFO - 发现 62 个新链接:
+2025-04-11 11:57:47,504 - INFO -   - https://www.batimes.com.ar/news/economy/milei-needs-rush-of-soy-dollars-to-calm-peso-sell-off-in-argentina.phtml
+2025-04-11 11:57:47,505 - INFO -   - https://www.batimes.com.ar/news/economy/argentina-allows-live-cattle-exports-as-milei-scraps-1973-policy.phtml
+2025-04-11 11:57:47,505 - INFO -   - https://www.batimes.com.ar/news/opinion-and-analysis/hidden-by-crypto.phtml
+2025-04-11 11:57:47,505 - INFO -   - https://www.batimes.com.ar/news/economy/mileis-plan-to-boost-farm-exports-stop-ships-from-running-aground.phtml
+2025-04-11 11:57:47,505 - INFO -   - https://www.batimes.com.ar/news/economy/soy-falls-as-us-china-talks-loom-weather-improves-in-argentina.phtml
+2025-04-11 11:57:47,505 - INFO -   - https://www.batimes.com.ar/news/economy/argentina-slashes-export-taxes-to-rescue-drought-hit-farmers.phtml
+2025-04-11 11:57:47,505 - INFO -   - https://www.batimes.com.ar/news/economy/argentina-to-temporarily-reduce-export-duties-in-boost-for-farmers.phtml
+2025-04-11 11:57:47,506 - INFO -   - https://www.batimes.com.ar/news/economy/rainfall-falters-for-argentinas-baked-soybean-and-corn-farms.phtml
+2025-04-11 11:57:47,506 - INFO -   - https://www.batimes.com.ar/news/economy/distressed-fund-wins-key-role-in-bankruptcy-case-of-argentina-soy-exporter-vicentin.phtml
+2025-04-11 11:57:47,506 - INFO -   - https://www.batimes.com.ar/news/economy/argentina-seeks-its-first-wheat-shipments-to-china-in-decades.phtml
+2025-04-11 11:57:47,507 - INFO -   ... 还有 52 个新链接未显示
+2025-04-11 11:57:47,507 - INFO - 历史链接更新至 62 个
+2025-04-11 11:57:47,512 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 11:58:02,513 - INFO - 
+正在检查主页 [21/21]: https://valor.globo.com/agronegocios/
+2025-04-11 11:58:02,514 - INFO - 备注: 巴西农业经济相关网
+2025-04-11 11:58:02,515 - INFO - 正在使用scrape_url方法获取 https://valor.globo.com/agronegocios/ 的链接...
+2025-04-11 11:58:12,318 - INFO - 移除了自引用链接: https://valor.globo.com/agronegocios/
+2025-04-11 11:58:12,318 - INFO - 原始链接数量: 102, 去除自引用后: 101, 过滤后: 101
+2025-04-11 11:58:12,318 - INFO - 发现 101 个链接
+2025-04-11 11:58:12,319 - INFO - 历史链接数量: 0
+2025-04-11 11:58:12,319 - INFO - 发现 101 个新链接:
+2025-04-11 11:58:12,319 - INFO -   - https://www.globo.com/?utm_source=barraGCOM
+2025-04-11 11:58:12,319 - INFO -   - https://g1.globo.com/?utm_source=barraGCOM
+2025-04-11 11:58:12,319 - INFO -   - https://ge.globo.com/?utm_source=barraGCOM
+2025-04-11 11:58:12,320 - INFO -   - https://gshow.globo.com/?utm_source=barraGCOM
+2025-04-11 11:58:12,320 - INFO -   - https://globoplay.globo.com/?utm_source=barraGCOM
+2025-04-11 11:58:12,320 - INFO -   - https://cbn.globo.com/?utm_source=barraGCOM_VE&utm_source=barraGCOM
+2025-04-11 11:58:12,321 - INFO -   - https://www.globo.com/todos-os-sites.html?utm_source=barraGCOM
+2025-04-11 11:58:12,321 - INFO -   - https://valor.globo.com/agronegocios
+2025-04-11 11:58:12,321 - INFO -   - https://globorural.globo.com/?head&interno_origem=valoragro
+2025-04-11 11:58:12,321 - INFO -   - https://globorural.globo.com/cotacoes/noticia/2025/04/precos-do-cafe-e-acucar-reagem-em-ny-apos-recuo-do-tarifaco.ghtml
+2025-04-11 11:58:12,322 - INFO -   ... 还有 91 个新链接未显示
+2025-04-11 11:58:12,322 - INFO - 历史链接更新至 101 个
+2025-04-11 11:58:12,337 - INFO - 新链接已保存，批次ID: batch_20250411115812
+2025-04-11 11:58:12,340 - INFO - 
+总计发现 874 个新链接，来自 20 个网站
+2025-04-11 11:58:12,340 - INFO - 检查完成 - 2025-04-11 11:58:12
+2025-04-11 14:24:43,960 - INFO - 使用Excel文件: testhomepage.xlsx
+2025-04-11 14:24:43,963 - INFO - 使用 FirecrawlApp API密钥: fc-9c...07af3
+2025-04-11 14:24:43,964 - INFO - 
+开始检查 - 2025-04-11 14:24:43
+2025-04-11 14:24:44,454 - INFO - 
+正在检查主页 [1/21]: https://tardaguila.uy/ganaderia
+2025-04-11 14:24:44,455 - INFO - 备注: 乌拉圭农业网站
+2025-04-11 14:24:44,455 - INFO - 正在使用scrape_url方法获取 https://tardaguila.uy/ganaderia 的链接...
+2025-04-11 14:24:55,087 - INFO - 原始链接数量: 33, 去除自引用后: 33, 过滤后: 33
+2025-04-11 14:24:55,087 - INFO - 发现 33 个链接
+2025-04-11 14:24:55,088 - INFO - 历史链接数量: 31
+2025-04-11 14:24:55,088 - INFO - 发现 4 个新链接:
+2025-04-11 14:24:55,088 - INFO -   - https://tardaguila.uy/component/banners/click/51
+2025-04-11 14:24:55,088 - INFO -   - https://tardaguila.uy/ovinos/trump-golpeo-fuertemente-al-mercado-lanero-en-dolares
+2025-04-11 14:24:55,089 - INFO -   - https://tardaguila.uy/component/banners/click/48
+2025-04-11 14:24:55,089 - INFO -   - https://www.youtube.com/watch?v=u0ea7Oeb680&embeds_referring_euri=https%3A%2F%2Ftardaguila.uy%2F
+2025-04-11 14:24:55,089 - INFO - 历史链接更新至 35 个
+2025-04-11 14:24:55,097 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:25:10,098 - INFO - 
+正在检查主页 [2/21]: https://blasinayasociados.com/ganaderia/
+2025-04-11 14:25:10,098 - INFO - 备注: 乌拉圭牛肉资讯
+2025-04-11 14:25:10,099 - INFO - 正在使用scrape_url方法获取 https://blasinayasociados.com/ganaderia/ 的链接...
+2025-04-11 14:25:16,953 - INFO - 原始链接数量: 30, 去除自引用后: 30, 过滤后: 30
+2025-04-11 14:25:16,953 - INFO - 发现 30 个链接
+2025-04-11 14:25:16,954 - INFO - 历史链接数量: 30
+2025-04-11 14:25:16,954 - INFO - 发现 2 个新链接:
+2025-04-11 14:25:16,954 - INFO -   - https://blasinayasociados.com/?_dnlink=16749&aid=1720&t=1744341546
+2025-04-11 14:25:16,954 - INFO -   - https://blasinayasociados.com/?_dnlink=28107&aid=1720&t=1744341546
+2025-04-11 14:25:16,954 - INFO - 历史链接更新至 32 个
+2025-04-11 14:25:16,962 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:25:31,963 - INFO - 
+正在检查主页 [3/21]: https://www.beefcentral.com/news/
+2025-04-11 14:25:31,964 - INFO - 备注: 澳洲最大的牛肉资讯网站，更新澳洲养牛以及全球牛肉新闻，以及活牛价格，预测
+2025-04-11 14:25:31,964 - INFO - 正在使用scrape_url方法获取 https://www.beefcentral.com/news/ 的链接...
+2025-04-11 14:25:44,760 - INFO - 移除了自引用链接: https://www.beefcentral.com/news/
+2025-04-11 14:25:44,760 - INFO - 原始链接数量: 19, 去除自引用后: 18, 过滤后: 18
+2025-04-11 14:25:44,760 - INFO - 发现 18 个链接
+2025-04-11 14:25:44,761 - INFO - 历史链接数量: 20
+2025-04-11 14:25:44,761 - INFO - 发现 2 个新链接:
+2025-04-11 14:25:44,762 - INFO -   - https://www.beefcentral.com/news/reinvigorated-eu-free-trade-agreement-talks-in-wake-of-trump-tariff-impact/
+2025-04-11 14:25:44,762 - INFO -   - https://www.beefcentral.com/news/sustainability-policies-at-a-crossroads-with-trump-pushback/
+2025-04-11 14:25:44,762 - INFO - 历史链接更新至 22 个
+2025-04-11 14:25:44,769 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:25:59,770 - INFO - 
+正在检查主页 [4/21]: https://bichosdecampo.com/
+2025-04-11 14:25:59,771 - INFO - 备注: 阿根廷养牛以及阿根廷牛肉新闻
+2025-04-11 14:25:59,771 - INFO - 正在使用scrape_url方法获取 https://bichosdecampo.com/ 的链接...
+2025-04-11 14:26:08,886 - INFO - 移除了自引用链接: https://bichosdecampo.com/
+2025-04-11 14:26:08,886 - INFO - 原始链接数量: 75, 去除自引用后: 74, 过滤后: 51
+2025-04-11 14:26:08,887 - INFO - 发现 51 个链接
+2025-04-11 14:26:08,887 - INFO - 历史链接数量: 51
+2025-04-11 14:26:08,887 - INFO - 没有发现新链接
+2025-04-11 14:26:08,890 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:26:23,892 - INFO - 
+正在检查主页 [5/21]: https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias
+2025-04-11 14:26:23,892 - INFO - 备注: 乌拉圭农畜渔业部官方网站
+2025-04-11 14:26:23,893 - INFO - 正在使用scrape_url方法获取 https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias 的链接...
+2025-04-11 14:26:31,060 - INFO - 移除了自引用链接: https://www.gub.uy/ministerio-ganaderia-agricultura-pesca/comunicacion/noticias
+2025-04-11 14:26:31,060 - INFO - 原始链接数量: 30, 去除自引用后: 29, 过滤后: 29
+2025-04-11 14:26:31,061 - INFO - 发现 29 个链接
+2025-04-11 14:26:31,061 - INFO - 历史链接数量: 29
+2025-04-11 14:26:31,061 - INFO - 没有发现新链接
+2025-04-11 14:26:31,065 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:26:46,065 - INFO - 
+正在检查主页 [6/21]: https://www.gov.br/agricultura/pt-br/assuntos/noticias
+2025-04-11 14:26:46,067 - INFO - 备注: 巴西农业部
+2025-04-11 14:26:46,067 - INFO - 正在使用scrape_url方法获取 https://www.gov.br/agricultura/pt-br/assuntos/noticias 的链接...
+2025-04-11 14:26:54,947 - INFO - 原始链接数量: 88, 去除自引用后: 88, 过滤后: 88
+2025-04-11 14:26:54,947 - INFO - 发现 88 个链接
+2025-04-11 14:26:54,948 - INFO - 历史链接数量: 88
+2025-04-11 14:26:54,948 - INFO - 没有发现新链接
+2025-04-11 14:26:54,951 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:27:09,952 - INFO - 
+正在检查主页 [7/21]: https://www.noticiasagropecuarias.com/category/ganaderia/
+2025-04-11 14:27:09,952 - INFO - 备注: 阿根廷本土牛肉资讯网站
+2025-04-11 14:27:09,953 - INFO - 正在使用scrape_url方法获取 https://www.noticiasagropecuarias.com/category/ganaderia/ 的链接...
+2025-04-11 14:27:17,691 - INFO - 移除了自引用链接: https://www.noticiasagropecuarias.com/category/ganaderia/
+2025-04-11 14:27:17,691 - INFO - 原始链接数量: 20, 去除自引用后: 19, 过滤后: 10
+2025-04-11 14:27:17,691 - INFO - 发现 10 个链接
+2025-04-11 14:27:17,692 - INFO - 历史链接数量: 10
+2025-04-11 14:27:17,692 - INFO - 没有发现新链接
+2025-04-11 14:27:17,695 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:27:32,696 - INFO - 
+正在检查主页 [8/21]: https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/
+2025-04-11 14:27:32,697 - INFO - 备注: 巴西本土牛肉资讯，包括开关资讯，牛肉价格，工厂动态等等
+2025-04-11 14:27:32,697 - INFO - 正在使用scrape_url方法获取 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/ 的链接...
+2025-04-11 14:28:34,710 - ERROR - 从页面提取链接时出错 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/: Request Timeout: Failed to scrape URL as the request timed out. Request timed out - No additional error details provided.
+2025-04-11 14:28:34,710 - INFO - 请求超时，等待 15 秒后重试...
+2025-04-11 14:28:49,711 - INFO - 第 1 次重试，等待 15 秒...
+2025-04-11 14:29:04,713 - INFO - 正在使用scrape_url方法获取 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/ 的链接...
+2025-04-11 14:30:05,617 - ERROR - 从页面提取链接时出错 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/: Request Timeout: Failed to scrape URL as the request timed out. Request timed out - No additional error details provided.
+2025-04-11 14:30:05,618 - INFO - 请求超时，等待 15 秒后重试...
+2025-04-11 14:30:20,619 - INFO - 第 2 次重试，等待 15 秒...
+2025-04-11 14:30:35,620 - INFO - 正在使用scrape_url方法获取 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/ 的链接...
+2025-04-11 14:40:35,650 - ERROR - 从页面提取链接时出错 https://beefpoint.com.br/cadeia-produtiva/giro-do-boi/: HTTPSConnectionPool(host='api.firecrawl.dev', port=443): Max retries exceeded with url: /v1/scrape (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+2025-04-11 14:40:35,651 - WARNING - 无法处理的错误，放弃获取链接
+2025-04-11 14:40:35,651 - INFO - 发现 0 个链接
+2025-04-11 14:40:35,651 - INFO - 历史链接数量: 0
+2025-04-11 14:40:35,651 - INFO - 没有发现新链接
+2025-04-11 14:40:35,654 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:40:50,654 - INFO - 
+正在检查主页 [9/21]: https://www.souagro.net/categoria/editoriais/pecuaria/
+2025-04-11 14:40:50,655 - INFO - 备注: 巴西本土牛肉资讯，包括开关资讯，牛肉价格，工厂动态等等
+2025-04-11 14:40:50,655 - INFO - 正在使用scrape_url方法获取 https://www.souagro.net/categoria/editoriais/pecuaria/ 的链接...
+2025-04-11 14:41:21,386 - INFO - 原始链接数量: 17, 去除自引用后: 17, 过滤后: 14
+2025-04-11 14:41:21,386 - INFO - 发现 14 个链接
+2025-04-11 14:41:21,386 - INFO - 历史链接数量: 14
+2025-04-11 14:41:21,387 - INFO - 没有发现新链接
+2025-04-11 14:41:21,389 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:41:36,390 - INFO - 
+正在检查主页 [10/21]: https://globorural.globo.com/agricultura/
+2025-04-11 14:41:36,390 - INFO - 备注: 巴西媒体资讯
+2025-04-11 14:41:36,391 - INFO - 正在使用scrape_url方法获取 https://globorural.globo.com/agricultura/ 的链接...
+2025-04-11 14:42:21,072 - INFO - 移除了自引用链接: https://globorural.globo.com/agricultura/
+2025-04-11 14:42:21,072 - INFO - 原始链接数量: 45, 去除自引用后: 44, 过滤后: 44
+2025-04-11 14:42:21,072 - INFO - 发现 44 个链接
+2025-04-11 14:42:21,073 - INFO - 历史链接数量: 44
+2025-04-11 14:42:21,073 - INFO - 没有发现新链接
+2025-04-11 14:42:21,075 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:42:36,076 - INFO - 
+正在检查主页 [11/21]: https://www.comprerural.com/categorias/noticias/
+2025-04-11 14:42:36,076 - INFO - 备注: 巴西媒体资讯
+2025-04-11 14:42:36,076 - INFO - 正在使用scrape_url方法获取 https://www.comprerural.com/categorias/noticias/ 的链接...
+2025-04-11 14:42:58,482 - INFO - 移除了自引用链接: https://www.comprerural.com/categorias/noticias/
+2025-04-11 14:42:58,482 - INFO - 原始链接数量: 26, 去除自引用后: 25, 过滤后: 22
+2025-04-11 14:42:58,483 - INFO - 发现 22 个链接
+2025-04-11 14:42:58,483 - INFO - 历史链接数量: 22
+2025-04-11 14:42:58,483 - INFO - 没有发现新链接
+2025-04-11 14:42:58,486 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:43:13,487 - INFO - 
+正在检查主页 [12/21]: https://eurocarne.com/noticias
+2025-04-11 14:43:13,488 - INFO - 备注: 西班牙和拉丁美洲肉类资讯
+2025-04-11 14:43:13,488 - INFO - 正在使用scrape_url方法获取 https://eurocarne.com/noticias 的链接...
+2025-04-11 14:43:41,702 - INFO - 移除了自引用链接: https://eurocarne.com/noticias
+2025-04-11 14:43:41,702 - INFO - 原始链接数量: 101, 去除自引用后: 100, 过滤后: 99
+2025-04-11 14:43:41,702 - INFO - 发现 99 个链接
+2025-04-11 14:43:41,703 - INFO - 历史链接数量: 99
+2025-04-11 14:43:41,703 - INFO - 发现 3 个新链接:
+2025-04-11 14:43:41,703 - INFO -   - https://eurocarne.com/track/tid/c34f907076421512ae202b7427610281
+2025-04-11 14:43:41,703 - INFO -   - https://eurocarne.com/noticias/codigo/66362/kw/Balance+oficial+de+la+38%C2%AA+edici%C3%B3n+del+Sal%C3%B3n%0AGourmets%3A+%26quot%3BLa+mejor+de+la+historia%26quot%3B
+2025-04-11 14:43:41,703 - INFO -   - https://eurocarne.com/noticias/codigo/66342
+2025-04-11 14:43:41,704 - INFO - 历史链接更新至 102 个
+2025-04-11 14:43:41,710 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:43:56,711 - INFO - 
+正在检查主页 [13/21]: https://www.farmnews.com.br/category/mercado/
+2025-04-11 14:43:56,711 - INFO - 备注: 巴西行业资讯
+2025-04-11 14:43:56,712 - INFO - 正在使用scrape_url方法获取 https://www.farmnews.com.br/category/mercado/ 的链接...
+2025-04-11 14:44:08,639 - INFO - 原始链接数量: 19, 去除自引用后: 19, 过滤后: 15
+2025-04-11 14:44:08,639 - INFO - 发现 15 个链接
+2025-04-11 14:44:08,639 - INFO - 历史链接数量: 15
+2025-04-11 14:44:08,639 - INFO - 没有发现新链接
+2025-04-11 14:44:08,642 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:44:23,643 - INFO - 
+正在检查主页 [14/21]: https://www.theagribiz.com/agribuzz/
+2025-04-11 14:44:23,643 - INFO - 备注: 巴西媒体资讯
+2025-04-11 14:44:23,644 - INFO - 正在使用scrape_url方法获取 https://www.theagribiz.com/agribuzz/ 的链接...
+2025-04-11 14:44:27,421 - INFO - 移除了自引用链接: https://www.theagribiz.com/agribuzz/
+2025-04-11 14:44:27,421 - INFO - 原始链接数量: 11, 去除自引用后: 10, 过滤后: 10
+2025-04-11 14:44:27,421 - INFO - 发现 10 个链接
+2025-04-11 14:44:27,421 - INFO - 历史链接数量: 10
+2025-04-11 14:44:27,421 - INFO - 没有发现新链接
+2025-04-11 14:44:27,425 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:44:42,426 - INFO - 
+正在检查主页 [15/21]: https://www.agriland.ie/latest-farming-news/
+2025-04-11 14:44:42,426 - INFO - 备注: 爱尔兰最大的农业新闻网站，更新全球肉类新闻
+2025-04-11 14:44:42,426 - INFO - 正在使用scrape_url方法获取 https://www.agriland.ie/latest-farming-news/ 的链接...
+2025-04-11 14:44:47,512 - INFO - 原始链接数量: 51, 去除自引用后: 51, 过滤后: 48
+2025-04-11 14:44:47,512 - INFO - 发现 48 个链接
+2025-04-11 14:44:47,513 - INFO - 历史链接数量: 47
+2025-04-11 14:44:47,513 - INFO - 发现 4 个新链接:
+2025-04-11 14:44:47,513 - INFO -   - https://www.agriland.ie/farming-news/whats-your-protocol-for-high-cell-count-cows-in-the-herd/
+2025-04-11 14:44:47,514 - INFO -   - https://www.agriland.ie/farming-news/mart-report-best-year-yet-on-cattle-trade-at-cootehill-mart/
+2025-04-11 14:44:47,514 - INFO -   - https://www.agrirecruit.ie/job/certification-officer-2?utm_source=Agriland&utm_campaign=sidebar_widget&utm_medium=widget
+2025-04-11 14:44:47,514 - INFO -   - https://www.agriland.ie/farming-news/optimising-grazing-in-co-tipperary-with-a-robotic-milking-system/
+2025-04-11 14:44:47,515 - INFO - 历史链接更新至 51 个
+2025-04-11 14:44:47,523 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:45:02,524 - INFO - 
+正在检查主页 [16/21]: https://www.thebeefsite.com/latest?page=1
+2025-04-11 14:45:02,524 - INFO - 备注: 全球牛肉行业新闻及市场报告
+2025-04-11 14:45:02,526 - INFO - 正在使用scrape_url方法获取 https://www.thebeefsite.com/latest?page=1 的链接...
+2025-04-11 14:45:12,082 - INFO - 移除了自引用链接: https://www.thebeefsite.com/latest?page=1
+2025-04-11 14:45:12,082 - INFO - 原始链接数量: 36, 去除自引用后: 35, 过滤后: 35
+2025-04-11 14:45:12,083 - INFO - 发现 35 个链接
+2025-04-11 14:45:12,083 - INFO - 历史链接数量: 35
+2025-04-11 14:45:12,084 - INFO - 没有发现新链接
+2025-04-11 14:45:12,087 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:45:27,087 - INFO - 
+正在检查主页 [17/21]: https://www.mla.com.au/news-and-events/industry-news/
+2025-04-11 14:45:27,089 - INFO - 备注: 红肉和畜牧业新闻、研究，牛羊市场
+2025-04-11 14:45:27,089 - INFO - 正在使用scrape_url方法获取 https://www.mla.com.au/news-and-events/industry-news/ 的链接...
+2025-04-11 14:45:37,105 - INFO - 原始链接数量: 42, 去除自引用后: 42, 过滤后: 42
+2025-04-11 14:45:37,105 - INFO - 发现 42 个链接
+2025-04-11 14:45:37,105 - INFO - 历史链接数量: 42
+2025-04-11 14:45:37,106 - INFO - 没有发现新链接
+2025-04-11 14:45:37,108 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:45:52,110 - INFO - 
+正在检查主页 [18/21]: https://www.canadiancattlemen.ca/
+2025-04-11 14:45:52,110 - INFO - 备注: 加拿大牛肉业协会，更新农业新闻
+2025-04-11 14:45:52,110 - INFO - 正在使用scrape_url方法获取 https://www.canadiancattlemen.ca/ 的链接...
+2025-04-11 14:46:02,564 - INFO - 原始链接数量: 42, 去除自引用后: 42, 过滤后: 42
+2025-04-11 14:46:02,564 - INFO - 发现 42 个链接
+2025-04-11 14:46:02,564 - INFO - 历史链接数量: 42
+2025-04-11 14:46:02,565 - INFO - 没有发现新链接
+2025-04-11 14:46:02,568 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:46:17,568 - INFO - 
+正在检查主页 [19/21]: https://www.elobservador.com.uy/argentina
+2025-04-11 14:46:17,568 - INFO - 备注: 乌拉圭权威新闻网站，在农业板块有肉类新闻更新
+2025-04-11 14:46:17,570 - INFO - 正在使用scrape_url方法获取 https://www.elobservador.com.uy/argentina 的链接...
+2025-04-11 14:46:27,584 - INFO - 原始链接数量: 82, 去除自引用后: 82, 过滤后: 82
+2025-04-11 14:46:27,584 - INFO - 发现 82 个链接
+2025-04-11 14:46:27,584 - INFO - 历史链接数量: 82
+2025-04-11 14:46:27,586 - INFO - 没有发现新链接
+2025-04-11 14:46:27,588 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:46:42,589 - INFO - 
+正在检查主页 [20/21]: https://www.batimes.com.ar/topics/agriculture
+2025-04-11 14:46:42,590 - INFO - 备注: 阿根廷农业资讯门户网站
+2025-04-11 14:46:42,590 - INFO - 正在使用scrape_url方法获取 https://www.batimes.com.ar/topics/agriculture 的链接...
+2025-04-11 14:47:10,677 - INFO - 原始链接数量: 62, 去除自引用后: 62, 过滤后: 62
+2025-04-11 14:47:10,677 - INFO - 发现 62 个链接
+2025-04-11 14:47:10,677 - INFO - 历史链接数量: 62
+2025-04-11 14:47:10,678 - INFO - 发现 1 个新链接:
+2025-04-11 14:47:10,678 - INFO -   - https://www.perfil.com/noticias/actualidad/carlos-bianco-fue-a-la-casa-rosada-para-coordinar-las-elecciones-en-la-provincia-de-buenos-aires.phtml
+2025-04-11 14:47:10,678 - INFO - 历史链接更新至 63 个
+2025-04-11 14:47:10,685 - INFO - 等待 15 秒后继续下一个URL...
+2025-04-11 14:47:25,686 - INFO - 
+正在检查主页 [21/21]: https://valor.globo.com/agronegocios/
+2025-04-11 14:47:25,686 - INFO - 备注: 巴西农业经济相关网
+2025-04-11 14:47:25,687 - INFO - 正在使用scrape_url方法获取 https://valor.globo.com/agronegocios/ 的链接...
+2025-04-11 14:47:44,709 - INFO - 移除了自引用链接: https://valor.globo.com/agronegocios/
+2025-04-11 14:47:44,709 - INFO - 原始链接数量: 110, 去除自引用后: 109, 过滤后: 109
+2025-04-11 14:47:44,710 - INFO - 发现 109 个链接
+2025-04-11 14:47:44,710 - INFO - 历史链接数量: 101
+2025-04-11 14:47:44,710 - INFO - 发现 9 个新链接:
+2025-04-11 14:47:44,711 - INFO -   - https://globorural.globo.com/negocios/noticia/2025/04/cargill-quer-ampliar-portflio-de-produtos-para-varejo-e-consumidor-final.ghtml
+2025-04-11 14:47:44,711 - INFO -   - https://globorural.globo.com/agricultura/cafe/noticia/2025/04/exportacao-de-cafe-recua-em-volume-mas-sobe-em-receita.ghtml
+2025-04-11 14:47:44,711 - INFO -   - https://globorural.globo.com/negocios/noticia/2025/04/corteva-fecha-unidade-de-escritorios-no-rio-grande-do-sul.ghtml
+2025-04-11 14:47:44,711 - INFO -   - https://globorural.globo.com/cotacoes/noticia/2025/04/guerra-comercial-impacta-precos-do-cafe-e-acucar-em-nova-york.ghtml
+2025-04-11 14:47:44,712 - INFO -   - https://globorural.globo.com/cotacoes/noticia/2025/04/trump-recua-em-tarifaco-e-soja-avanca-2percent-na-bolsa-de-chicago.ghtml
+2025-04-11 14:47:44,712 - INFO -   - https://globorural.globo.com/agricultura/cafe/noticia/2025/04/cientistas-descobrem-segredo-para-fazer-o-cafe-coado-perfeito-veja-qual-e.ghtml
+2025-04-11 14:47:44,712 - INFO -   - https://globorural.globo.com/pecuaria/aves/noticia/2025/04/exportacoes-de-genetica-avicola-caem-em-marco-mas-receita-cresce.ghtml
+2025-04-11 14:47:44,712 - INFO -   - https://globorural.globo.com/economia/noticia/2025/04/china-ira-impor-tarifa-de-84percent-sobre-produtos-dos-eua-em-resposta-a-trump.ghtml
+2025-04-11 14:47:44,712 - INFO -   - https://valor.globo.com/agronegocios/index/feed/pagina-6
+2025-04-11 14:47:44,713 - INFO - 历史链接更新至 110 个
+2025-04-11 14:47:44,727 - INFO - 新链接已保存，批次ID: batch_20250411144744
+2025-04-11 14:47:44,729 - INFO - 
+总计发现 25 个新链接，来自 7 个网站
+2025-04-11 14:47:44,730 - INFO - 检查完成 - 2025-04-11 14:47:44
