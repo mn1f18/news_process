@@ -107,6 +107,10 @@ class HomepageScraper:
             size_threshold_mb: 文件大小超过多少MB时归档
         """
         try:
+            # 确保存档目录存在
+            if not os.path.exists(self.archive_dir):
+                os.makedirs(self.archive_dir)
+                
             # 检查文件大小
             if os.path.exists(self.new_links_file):
                 file_size_mb = os.path.getsize(self.new_links_file) / (1024 * 1024)
@@ -148,6 +152,10 @@ class HomepageScraper:
             if not os.path.exists(self.new_links_file):
                 return
             
+            # 确保存档目录存在
+            if not os.path.exists(self.archive_dir):
+                os.makedirs(self.archive_dir)
+                
             # 创建归档文件名
             archive_timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             archive_filename = f"links_archive_{archive_timestamp}.json"
