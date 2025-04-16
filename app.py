@@ -417,11 +417,28 @@ class WorkflowManager:
                                            details={"message": "没有新链接需要处理"})
                 return workflow_id, None
             
-            # 第二步：链接分析
-            analysis_results = self.analyze_links(links, workflow_id)
+            # 第二步：只分析最新一批链接（而不是所有links）
+            # 获取最新链接
+            latest_links = self.get_latest_links(50)  # 限制为最多50个最新链接
+            
+            if not latest_links:
+                logger.info("没有最新链接可分析，工作流结束")
+                self.update_workflow_status(workflow_id, "WORKFLOW_COMPLETED", 
+                                           details={"message": "没有最新链接可分析"})
+                return workflow_id, None
+                
+            logger.info(f"开始分析最新的 {len(latest_links)} 个链接")
+            analysis_results = self.analyze_links(latest_links, workflow_id)
             
             # 更新工作流状态
-            self.update_workflow_status(workflow_id, "WORKFLOW_COMPLETED")
+            self.update_workflow_status(workflow_id, "WORKFLOW_COMPLETED", 
+                                       details={
+                                           "step1_links_found": len(links),
+                                           "step2_latest_links_analyzed": len(latest_links),
+                                           "valid_count": len(analysis_results['valid']),
+                                           "invalid_count": len(analysis_results['invalid']),
+                                           "failed_count": len(analysis_results['failed'])
+                                       })
             
             logger.info(f"完整工作流已完成，ID: {workflow_id}")
             return workflow_id, analysis_results
@@ -578,8 +595,18 @@ class WorkflowManager:
                                            details={"message": "没有新链接需要处理"})
                 return workflow_id, None
             
-            # 第二步：链接分析
-            analysis_results = self.analyze_links(links, workflow_id)
+            # 第二步：只分析最新一批链接（而不是所有links）
+            # 获取最新链接
+            latest_links = self.get_latest_links(50)  # 限制为最多50个最新链接
+            
+            if not latest_links:
+                logger.info("没有最新链接可分析，工作流结束")
+                self.update_workflow_status(workflow_id, "EXTENDED_WORKFLOW_COMPLETED", 
+                                           details={"message": "没有最新链接可分析"})
+                return workflow_id, None
+            
+            logger.info(f"开始分析最新的 {len(latest_links)} 个链接")
+            analysis_results = self.analyze_links(latest_links, workflow_id)
             
             if not analysis_results or not analysis_results.get('valid'):
                 logger.info("没有有效链接，工作流结束")
@@ -597,6 +624,7 @@ class WorkflowManager:
             logger.info(f"完整扩展工作流已完成，ID: {workflow_id}")
             return workflow_id, {
                 "step1_links_found": len(links),
+                "step2_latest_links_analyzed": len(latest_links),
                 "step2_valid_links": len(analysis_results['valid']),
                 "step3_results": step3_results
             }
@@ -767,7 +795,7 @@ def step1to2_workflow():
     return jsonify({
         'status': 'accepted',
         'workflow_id': workflow_id,
-        'message': 'Complete workflow (step1-2) has been queued'
+        'message': 'Complete workflow (step1-2) has been queued. Step 2 will only analyze the latest links, not all links.'
     })
 
 # 路由: 完整工作流（步骤1+2+3）
@@ -784,7 +812,7 @@ def all_workflow():
     return jsonify({
         'status': 'accepted',
         'workflow_id': workflow_id,
-        'message': 'Extended workflow (step1-2-3) has been queued'
+        'message': 'Extended workflow (step1-2-3) has been queued. Step 2 will only analyze the latest links, not all links.'
     })
 
 # 路由: 获取工作流状态
