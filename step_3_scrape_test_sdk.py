@@ -42,22 +42,41 @@ def sdk_call(prompt):
                 # 清理其他可能的控制字符
                 json_data['content'] = clean_control_characters(json_data['content'])
             
-            # 确保所有字段都是字符串类型
+            # 确保所有字段都是字符串类型或正确的数据类型
             for key in json_data:
                 if isinstance(json_data[key], str):
                     json_data[key] = clean_control_characters(json_data[key])
+            
+            # 确保返回包含所有必要字段，如果缺少则提供默认值
+            default_fields = {
+                "title": "",
+                "content": "",
+                "event_tags": [],
+                "space_tags": [],
+                "cat_tags": [],
+                "publish_time": "",
+                "importance": "低",
+                "state": ["爬取失败"]
+            }
+            
+            # 用默认值填充缺失字段
+            for field, default_value in default_fields.items():
+                if field not in json_data:
+                    json_data[field] = default_value
             
             return json.dumps(json_data, ensure_ascii=False)
             
         except json.JSONDecodeError as e:
             print(f"JSON解析错误: {str(e)}")
-            # 如果解析失败，返回一个包含错误信息的JSON
+            # 如果解析失败，返回一个包含错误信息的JSON，使用新格式
             return json.dumps({
                 "title": "",
                 "content": "",
                 "event_tags": [],
                 "space_tags": [],
                 "cat_tags": [],
+                "publish_time": "",
+                "importance": "低",
                 "state": ["爬取失败"]
             }, ensure_ascii=False)
             
