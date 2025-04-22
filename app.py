@@ -2,18 +2,20 @@ import os
 import json
 import logging
 import time
+import traceback
 from datetime import datetime
 import uuid
-import pandas as pd
 from flask import Flask, request, jsonify
 import threading
 import queue
-import traceback
 
 # 导入我们的组件
 from step_1_homepage_scrape import HomepageScraper
 from step2_link_test import LinkAnalyzer
 from step_3_scrape_test_sdk import sdk_call
+import db_utils
+from db_utils import pg_connection
+from config import get_logger
 
 # 配置日志系统
 log_dir = "logs"
@@ -37,52 +39,14 @@ app = Flask(__name__)
 # 设置JSON编码，不转义中文字符
 app.config['JSON_AS_ASCII'] = False
 
-# 创建目录结构
+# 确保数据目录存在
 data_dir = "data"
-data_structure = {
-    "step1": ["archives"],
-    "step2": ["analysis_results"],
-    "step3": ["content", "summaries"],
-    "workflow": []
-}
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
 
-# 确保数据目录结构存在
-for main_dir, sub_dirs in data_structure.items():
-    main_path = os.path.join(data_dir, main_dir)
-    if not os.path.exists(main_path):
-        os.makedirs(main_path)
-    
-    for sub_dir in sub_dirs:
-        sub_path = os.path.join(main_path, sub_dir)
-        if not os.path.exists(sub_path):
-            os.makedirs(sub_path)
-
-# 定义文件路径
-STEP1 = {
-    "link_cache": os.path.join(data_dir, "step1", "link_cache.json"),
-    "new_links": os.path.join(data_dir, "step1", "new_links.json"),
-    "archives": os.path.join(data_dir, "step1", "archives")
-}
-
-STEP2 = {
-    "valid_links": os.path.join(data_dir, "step2", "valid_links.json"),
-    "invalid_links": os.path.join(data_dir, "step2", "invalid_links.json"),
-    "analysis_results": os.path.join(data_dir, "step2", "analysis_results")
-}
-
-STEP3 = {
-    "content": os.path.join(data_dir, "step3", "content"),
-    "summaries": os.path.join(data_dir, "step3", "summaries")
-}
-
-WORKFLOW = {
-    "status": os.path.join(data_dir, "workflow", "status.json")
-}
-
-# 确保状态文件存在
-if not os.path.exists(WORKFLOW["status"]):
-    with open(WORKFLOW["status"], 'w', encoding='utf-8') as f:
-        json.dump({}, f, ensure_ascii=False, indent=2)
+# 确保日志目录存在
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
 
 # 任务队列
 task_queue = queue.Queue()
@@ -91,108 +55,128 @@ class WorkflowManager:
     """工作流管理器，负责协调三个步骤之间的工作流"""
     
     def __init__(self):
-        # 初始化组件，使用新的文件路径
-        self.homepage_scraper = HomepageScraper(
-            "testhomepage.xlsx", 
-            cache_file=STEP1["link_cache"],
-            new_links_file=STEP1["new_links"],
-            archive_dir=STEP1["archives"]
-        )
+        """初始化工作流管理器"""
+        logger.info("初始化工作流管理器")
+        # 初始化组件
+        self.homepage_scraper = HomepageScraper()
+        self.link_analyzer = LinkAnalyzer()
         
-        # 初始化链接分析器，使用新的文件路径
-        self.link_analyzer = LinkAnalyzer(
-            valid_links_file=STEP2["valid_links"],
-            invalid_links_file=STEP2["invalid_links"]
-        )
-        
+    def generate_workflow_id(self):
+        """生成唯一的工作流ID"""
+        return str(uuid.uuid4())
+    
     def update_workflow_status(self, workflow_id, status, details=None, error=None):
         """更新工作流状态"""
+        logger.debug(f"更新工作流状态: {workflow_id} => {status}")
+        
         try:
-            status_data = {}
-            if os.path.exists(WORKFLOW["status"]):
-                with open(WORKFLOW["status"], 'r', encoding='utf-8') as f:
-                    status_data = json.load(f)
+            # 使用数据库函数更新工作流状态
+            success = db_utils.update_workflow_status(workflow_id, status, details, error)
             
-            # 更新状态
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            if workflow_id not in status_data:
-                status_data[workflow_id] = {
-                    'created_at': timestamp,
-                    'history': []
-                }
-            
-            # 添加新状态记录
-            new_status = {
-                'status': status,
-                'timestamp': timestamp
-            }
-            
-            if details:
-                new_status['details'] = details
-            
-            if error:
-                new_status['error'] = error
-            
-            status_data[workflow_id]['history'].append(new_status)
-            status_data[workflow_id]['current_status'] = status
-            status_data[workflow_id]['updated_at'] = timestamp
-            
-            # 保存状态数据
-            with open(WORKFLOW["status"], 'w', encoding='utf-8') as f:
-                json.dump(status_data, f, ensure_ascii=False, indent=2)
+            if not success:
+                logger.error(f"更新工作流状态失败: {workflow_id}")
+                return False
                 
-            logger.debug(f"工作流 {workflow_id} 状态已更新为 {status}")
-            
+            return True
         except Exception as e:
-            logger.error(f"更新工作流状态时出错: {e}")
+            logger.error(f"更新工作流状态时出错: {str(e)}")
+            logger.error(traceback.format_exc())
+            return False
     
     def get_workflow_status(self, workflow_id):
         """获取工作流状态"""
+        logger.debug(f"获取工作流状态: {workflow_id}")
+        
         try:
-            if os.path.exists(WORKFLOW["status"]):
-                with open(WORKFLOW["status"], 'r', encoding='utf-8') as f:
-                    status_data = json.load(f)
-                
-                if workflow_id in status_data:
-                    return status_data[workflow_id]
+            # 从数据库获取工作流状态
+            workflow_status = db_utils.get_workflow_status(workflow_id)
             
-            return None
+            if workflow_status is None:
+                logger.warning(f"未找到工作流: {workflow_id}")
+                return None
+                
+            return workflow_status
         except Exception as e:
-            logger.error(f"获取工作流状态时出错: {e}")
+            logger.error(f"获取工作流状态时出错: {str(e)}")
+            logger.error(traceback.format_exc())
             return None
     
     def get_all_workflow_status(self, status_filter=None):
-        """获取所有工作流状态，可选按状态筛选"""
+        """获取所有工作流状态"""
+        logger.debug(f"获取所有工作流状态, 过滤条件: {status_filter}")
+        
         try:
-            if os.path.exists(WORKFLOW["status"]):
-                with open(WORKFLOW["status"], 'r', encoding='utf-8') as f:
-                    status_data = json.load(f)
-                
-                if status_filter:
-                    return {k: v for k, v in status_data.items() 
-                            if v.get('current_status') == status_filter}
-                return status_data
+            # 从数据库获取所有工作流状态
+            all_statuses = db_utils.get_all_workflow_status(status_filter)
             
-            return {}
+            if not all_statuses:
+                logger.warning(f"没有找到任何工作流状态记录")
+                return []
+                
+            return all_statuses
         except Exception as e:
-            logger.error(f"获取所有工作流状态时出错: {e}")
-            return {}
+            logger.error(f"获取所有工作流状态时出错: {str(e)}")
+            logger.error(traceback.format_exc())
+            return []
+            
+    def save_analysis_result(self, workflow_id, result_type, results):
+        """保存分析结果"""
+        logger.debug(f"保存分析结果: workflow_id={workflow_id}, type={result_type}")
+        
+        try:
+            # 使用数据库保存内容
+            content_id = db_utils.save_content(
+                workflow_id=workflow_id,
+                content_type=result_type,
+                content=results
+            )
+            
+            if content_id:
+                logger.info(f"分析结果已保存: content_id={content_id}")
+                return True
+            else:
+                logger.error(f"保存分析结果失败")
+                return False
+        except Exception as e:
+            logger.error(f"保存分析结果时出错: {str(e)}")
+            logger.error(traceback.format_exc())
+            return False
+            
+    def get_analysis_result(self, workflow_id, result_type):
+        """获取分析结果"""
+        logger.debug(f"获取分析结果: workflow_id={workflow_id}, type={result_type}")
+        
+        try:
+            # 使用数据库获取内容
+            content = db_utils.get_content(
+                workflow_id=workflow_id,
+                content_type=result_type
+            )
+            
+            if content is None:
+                logger.warning(f"未找到分析结果: workflow_id={workflow_id}, type={result_type}")
+            
+            return content
+        except Exception as e:
+            logger.error(f"获取分析结果时出错: {str(e)}")
+            logger.error(traceback.format_exc())
+            return None
     
     def start_homepage_scraping(self, workflow_id=None):
         """启动主页抓取流程"""
         if workflow_id is None:
             workflow_id = f"workflow_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            # 确保不超过50个字符
+            if len(workflow_id) > 50:
+                workflow_id = workflow_id[:50]
             
         try:
             # 更新工作流状态
-            self.update_workflow_status(workflow_id, "SCRAPING_STARTED")
+            self.update_workflow_status(workflow_id, "SCRAPING_START")
             
             # 运行主页抓取
             logger.info(f"开始主页抓取，工作流ID: {workflow_id}")
-            self.homepage_scraper.check_for_new_links()
-            
-            # 获取新发现的链接
-            new_links_data = self.get_newly_discovered_links()
+            new_links_data = self.homepage_scraper.check_for_new_links()
             
             if not new_links_data:
                 logger.info("没有发现新链接，工作流完成")
@@ -202,20 +186,19 @@ class WorkflowManager:
             
             # 从新链接数据中提取链接
             all_links = []
-            for timestamp, sites in new_links_data.items():
-                for site, data in sites.items():
-                    # 使用site作为分类标签
-                    for link in data.get('new_links', []):
-                        all_links.append({
-                            'link': link,
-                            'source': data.get('source', ''),
-                            'note': data.get('note', ''),
-                            'homepage': site,
-                            'batch_id': data.get('batch_id', '')
-                        })
+            for homepage_url, data in new_links_data.items():
+                # 使用site作为分类标签
+                for link in data.get('new_links', []):
+                    all_links.append({
+                        'link': link,
+                        'source': data.get('source', ''),
+                        'note': data.get('note', ''),
+                        'homepage': homepage_url,
+                        'batch_id': data.get('batch_id', '')
+                    })
             
             # 更新工作流状态
-            self.update_workflow_status(workflow_id, "SCRAPING_COMPLETED", 
+            self.update_workflow_status(workflow_id, "SCRAPED", 
                                        details={"links_found": len(all_links)})
             
             logger.info(f"主页抓取完成，发现 {len(all_links)} 个新链接")
@@ -224,416 +207,465 @@ class WorkflowManager:
         except Exception as e:
             error_msg = f"主页抓取过程出错: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
-            self.update_workflow_status(workflow_id, "SCRAPING_FAILED", error=error_msg)
+            self.update_workflow_status(workflow_id, "FAILED", error=error_msg)
             return workflow_id, []
     
     def get_newly_discovered_links(self):
-        """从step1/new_links.json文件中获取新发现的链接"""
+        """获取新发现的链接"""
         try:
-            if os.path.exists(STEP1["new_links"]):
-                with open(STEP1["new_links"], 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            return {}
+            # 使用db_utils从数据库获取新链接
+            links = db_utils.get_newly_discovered_links()
+            logger.info(f"从数据库获取到 {len(links)} 组新链接数据")
+            return links
         except Exception as e:
-            logger.error(f"获取新链接数据时出错: {e}")
+            error_msg = f"获取新链接数据时出错: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
             return {}
 
     def get_latest_links(self, max_links=50):
-        """获取最新的一批链接，用于分析"""
+        """获取最新的一批链接"""
         try:
-            # 读取所有新链接
-            new_links_data = self.get_newly_discovered_links()
-            if not new_links_data:
-                logger.warning("没有找到任何新链接数据")
-                return []
-            
-            # 按时间戳排序，获取最新的条目
-            timestamps = sorted(new_links_data.keys(), reverse=True)
-            if not timestamps:
-                return []
-            
-            # 获取最新的时间戳
-            latest_timestamp = timestamps[0]
-            latest_data = new_links_data[latest_timestamp]
-            
-            # 收集所有链接
-            all_links = []
-            for site, data in latest_data.items():
-                for link in data.get('new_links', []):
-                    all_links.append({
-                        'link': link,
-                        'source': data.get('source', ''),
-                        'note': data.get('note', ''),
-                        'homepage': site,
-                        'batch_id': data.get('batch_id', '')
-                    })
-                    if len(all_links) >= max_links:
-                        break
-                if len(all_links) >= max_links:
-                    break
-            
-            logger.info(f"获取到最新的 {len(all_links)} 个链接用于分析，时间戳: {latest_timestamp}")
-            return all_links
-            
+            # 使用db_utils从数据库获取最新链接
+            links = db_utils.get_latest_links(max_links)
+            logger.info(f"从数据库获取到 {len(links)} 个最新链接")
+            return links
         except Exception as e:
             error_msg = f"获取最新链接时出错: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
             return []
-    
+
     def analyze_links(self, links, workflow_id):
-        """分析链接列表，确定哪些需要爬取"""
+        """分析链接，判断哪些需要爬取"""
         try:
+            if not links:
+                logger.warning("没有链接需要分析")
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={"message": "没有链接需要分析"})
+                return workflow_id, None
+            
             # 更新工作流状态
-            self.update_workflow_status(workflow_id, "ANALYSIS_STARTED", 
+            self.update_workflow_status(workflow_id, "ANALYZING", 
                                        details={"links_count": len(links)})
             
-            # 提取纯链接列表
-            pure_links = [item['link'] for item in links]
+            # 对于复杂链接对象，提取链接URL
+            if isinstance(links[0], dict):
+                link_urls = [link['link'] for link in links]
+            else:
+                link_urls = links
             
-            # 分析链接
-            logger.info(f"开始分析 {len(pure_links)} 个链接，工作流ID: {workflow_id}")
-            analysis_results = self.link_analyzer.process_links(pure_links)
+            # 使用链接分析器进行分析
+            logger.info(f"开始分析 {len(link_urls)} 个链接")
+            results = self.link_analyzer.process_links(link_urls, batch_id=workflow_id)
             
-            # 将分析结果与原始链接信息合并
-            enriched_results = {
-                'batch_id': analysis_results['batch_id'],
-                'workflow_id': workflow_id,
-                'valid': [],
-                'invalid': [],
-                'failed': []
+            # 更新工作流状态
+            analysis_stats = {
+                "valid_count": len(results['valid']),
+                "invalid_count": len(results['invalid']),
+                "failed_count": len(results['failed']),
+                "total_count": len(link_urls)
             }
             
-            # 处理有效链接
-            for link in analysis_results['valid']:
-                # 找到原始链接信息
-                original_info = next((item for item in links if item['link'] == link), {})
-                # 合并信息
-                link_info = original_info.copy()
-                link_info['link_id'] = analysis_results['link_ids'].get(link)
-                enriched_results['valid'].append(link_info)
+            self.update_workflow_status(workflow_id, "ANALYZED", details=analysis_stats)
             
-            # 处理无效链接
-            for link in analysis_results['invalid']:
-                original_info = next((item for item in links if item['link'] == link), {})
-                link_info = original_info.copy()
-                link_info['link_id'] = analysis_results['link_ids'].get(link)
-                enriched_results['invalid'].append(link_info)
+            logger.info(f"链接分析完成，有效链接: {len(results['valid'])}, 无效链接: {len(results['invalid'])}, 失败: {len(results['failed'])}")
             
-            # 处理失败链接
-            for link in analysis_results['failed']:
-                original_info = next((item for item in links if item['link'] == link), {})
-                link_info = original_info.copy()
-                link_info['link_id'] = analysis_results['link_ids'].get(link)
-                enriched_results['failed'].append(link_info)
-            
-            # 保存分析结果
-            self.save_analysis_results(enriched_results, workflow_id)
-            
-            # 更新工作流状态
-            self.update_workflow_status(workflow_id, "ANALYSIS_COMPLETED", 
-                                       details={
-                                           "valid_count": len(enriched_results['valid']),
-                                           "invalid_count": len(enriched_results['invalid']),
-                                           "failed_count": len(enriched_results['failed'])
-                                       })
-            
-            logger.info(f"链接分析完成，工作流ID: {workflow_id}")
-            logger.info(f"有效链接: {len(enriched_results['valid'])}, "
-                       f"无效链接: {len(enriched_results['invalid'])}, "
-                       f"失败链接: {len(enriched_results['failed'])}")
-            
-            return enriched_results
-            
+            return workflow_id, results
         except Exception as e:
-            error_msg = f"链接分析过程出错: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"分析链接时出错: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
-            self.update_workflow_status(workflow_id, "ANALYSIS_FAILED", error=error_msg)
-            return None
+            self.update_workflow_status(workflow_id, "FAILED", error=error_msg)
+            return workflow_id, None
     
     def save_analysis_results(self, results, workflow_id):
-        """保存分析结果到step2/analysis_results目录"""
+        """保存分析结果到数据库"""
         try:
-            # 创建文件名
-            results_file = os.path.join(STEP2["analysis_results"], f"analysis_{workflow_id}.json")
-            
-            # 保存数据
-            with open(results_file, 'w', encoding='utf-8') as f:
-                json.dump(results, f, ensure_ascii=False, indent=2)
+            if not results:
+                logger.warning("没有分析结果需要保存")
+                return False
                 
-            logger.info(f"分析结果已保存到 {results_file}")
+            # 结果已经在process_links中保存到数据库
+            logger.info(f"分析结果已保存到数据库，工作流ID: {workflow_id}")
+            return True
             
         except Exception as e:
-            logger.error(f"保存分析结果时出错: {e}")
-
+            error_msg = f"保存分析结果时出错: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            return False
+    
     def analyze_latest_links(self, max_links=50):
-        """单独分析最新抓取的链接"""
-        # 生成工作流ID
-        workflow_id = f"workflow_latest_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
+        """分析最新的链接"""
         try:
+            # 创建新的工作流ID
+            workflow_id = f"analyze_latest_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            if len(workflow_id) > 50:
+                workflow_id = workflow_id[:50]
+                
             # 更新工作流状态
-            logger.info(f"启动最新链接分析，ID: {workflow_id}")
-            self.update_workflow_status(workflow_id, "LATEST_ANALYSIS_STARTED")
-            
+            self.update_workflow_status(workflow_id, "STARTED", 
+                                       details={"max_links": max_links})
+                
             # 获取最新链接
+            logger.info(f"开始获取最新的 {max_links} 个链接")
             latest_links = self.get_latest_links(max_links)
             
             if not latest_links:
-                logger.info("没有找到最新链接，工作流结束")
-                self.update_workflow_status(workflow_id, "LATEST_ANALYSIS_COMPLETED", 
-                                           details={"message": "没有找到最新链接"})
+                logger.warning("没有找到任何链接")
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={"message": "没有找到任何链接"})
                 return workflow_id, None
+                
+            logger.info(f"获取到 {len(latest_links)} 个最新链接")
             
-            # 链接分析
-            analysis_results = self.analyze_links(latest_links, workflow_id)
+            # 分析链接
+            _, results = self.analyze_links([link['link'] for link in latest_links], workflow_id)
             
-            # 更新工作流状态
-            self.update_workflow_status(workflow_id, "LATEST_ANALYSIS_COMPLETED")
-            
-            logger.info(f"最新链接分析已完成，ID: {workflow_id}")
-            return workflow_id, analysis_results
+            return workflow_id, results
             
         except Exception as e:
-            error_msg = f"最新链接分析出错: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"分析最新链接时出错: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
-            self.update_workflow_status(workflow_id, "LATEST_ANALYSIS_FAILED", error=error_msg)
+            if workflow_id:
+                self.update_workflow_status(workflow_id, "FAILED", error=error_msg)
             return workflow_id, None
     
     def run_complete_workflow(self):
-        """运行完整的工作流程：抓取 -> 分析"""
-        # 生成工作流ID
-        workflow_id = f"workflow_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        try:
-            # 第一步：主页抓取
-            logger.info(f"启动完整工作流，ID: {workflow_id}")
-            self.update_workflow_status(workflow_id, "WORKFLOW_STARTED")
+        """运行完整的工作流：抓取 -> 分析 -> 处理有效链接"""
+        workflow_id = f"complete_workflow_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        if len(workflow_id) > 50:
+            workflow_id = workflow_id[:50]
             
+        try:
+            # 更新工作流状态
+            self.update_workflow_status(workflow_id, "STARTED")
+            
+            # 步骤1：抓取新链接
+            logger.info("步骤1：开始抓取新链接")
             _, links = self.start_homepage_scraping(workflow_id)
             
             if not links:
-                logger.info("没有新链接，工作流结束")
-                self.update_workflow_status(workflow_id, "WORKFLOW_COMPLETED", 
-                                           details={"message": "没有新链接需要处理"})
-                return workflow_id, None
-            
-            # 第二步：只分析最新一批链接（而不是所有links）
-            # 获取最新链接
-            latest_links = self.get_latest_links(50)  # 限制为最多50个最新链接
-            
-            if not latest_links:
-                logger.info("没有最新链接可分析，工作流结束")
-                self.update_workflow_status(workflow_id, "WORKFLOW_COMPLETED", 
-                                           details={"message": "没有最新链接可分析"})
+                logger.info("没有发现新链接，工作流完成")
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={"message": "没有发现新链接"})
                 return workflow_id, None
                 
-            logger.info(f"开始分析最新的 {len(latest_links)} 个链接")
-            analysis_results = self.analyze_links(latest_links, workflow_id)
+            # 步骤2：分析链接
+            logger.info(f"步骤2：开始分析 {len(links)} 个链接")
+            _, results = self.analyze_links([link['link'] for link in links], workflow_id)
             
-            # 更新工作流状态
-            self.update_workflow_status(workflow_id, "WORKFLOW_COMPLETED", 
-                                       details={
-                                           "step1_links_found": len(links),
-                                           "step2_latest_links_analyzed": len(latest_links),
-                                           "valid_count": len(analysis_results['valid']),
-                                           "invalid_count": len(analysis_results['invalid']),
-                                           "failed_count": len(analysis_results['failed'])
-                                       })
-            
-            logger.info(f"完整工作流已完成，ID: {workflow_id}")
-            return workflow_id, analysis_results
-            
+            if not results:
+                logger.warning("链接分析没有结果，工作流完成")
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={"message": "链接分析没有结果"})
+                return workflow_id, None
+                
+            # 步骤3：处理有效链接
+            if results['valid']:
+                logger.info(f"步骤3：处理 {len(results['valid'])} 个有效链接")
+                processed_links = self.process_valid_links(workflow_id, results['valid'])
+                
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={
+                                              "valid_links": len(results['valid']),
+                                              "processed_links": len(processed_links),
+                                              "invalid_links": len(results['invalid']),
+                                              "failed_links": len(results['failed'])
+                                          })
+                                          
+                return workflow_id, {
+                    "valid": results['valid'],
+                    "processed": processed_links,
+                    "invalid": results['invalid'],
+                    "failed": results['failed']
+                }
+            else:
+                logger.info("没有有效链接需要处理，工作流完成")
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={"message": "没有有效链接需要处理"})
+                return workflow_id, results
+                
         except Exception as e:
-            error_msg = f"工作流执行出错: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"运行完整工作流时出错: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
-            self.update_workflow_status(workflow_id, "WORKFLOW_FAILED", error=error_msg)
+            self.update_workflow_status(workflow_id, "FAILED", error=error_msg)
             return workflow_id, None
-
-    def process_valid_links(self, workflow_id=None, input_links=None, max_links=10):
-        """处理步骤2筛选出的有效链接，传递给步骤3进行深度分析
-        
-        参数:
-            workflow_id: 工作流ID，如果为None则自动生成
-            input_links: 指定的有效链接列表，如果为None则从最近分析结果中获取
-            max_links: 最多处理的链接数量
-        """
+    
+    def process_valid_links(self, workflow_id=None, input_links=None, max_links=50):
+        """处理有效链接，进行爬取和分析"""
         if workflow_id is None:
-            workflow_id = f"workflow_step3_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
+            workflow_id = f"process_links_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            if len(workflow_id) > 50:
+                workflow_id = workflow_id[:50]
+                
         try:
             # 更新工作流状态
-            logger.info(f"启动有效链接深度分析，ID: {workflow_id}")
-            self.update_workflow_status(workflow_id, "STEP3_ANALYSIS_STARTED")
+            self.update_workflow_status(workflow_id, "PROCESSING")
             
-            # 获取有效链接
-            valid_links = []
+            links_to_process = []
             
+            # 如果提供了输入链接，直接使用
             if input_links:
-                # 使用指定的链接
-                valid_links = input_links[:max_links]
-                logger.info(f"使用指定的 {len(valid_links)} 个链接进行深度分析")
+                links_to_process = input_links[:max_links]
+                logger.info(f"使用提供的链接，总计 {len(links_to_process)} 个")
             else:
-                # 从最近的分析结果中获取有效链接
-                analysis_files = [f for f in os.listdir(STEP2["analysis_results"]) if f.startswith("analysis_workflow_")]
-                if not analysis_files:
-                    logger.warning("没有找到分析结果文件")
-                    self.update_workflow_status(workflow_id, "STEP3_ANALYSIS_COMPLETED", 
-                                            details={"message": "没有找到分析结果文件"})
-                    return workflow_id, []
-                
-                # 按文件修改时间排序，获取最新的分析结果
-                latest_file = sorted(analysis_files, key=lambda x: os.path.getmtime(os.path.join(STEP2["analysis_results"], x)), reverse=True)[0]
-                latest_file_path = os.path.join(STEP2["analysis_results"], latest_file)
-                
-                with open(latest_file_path, 'r', encoding='utf-8') as f:
-                    analysis_results = json.load(f)
-                
-                if 'valid' not in analysis_results or not analysis_results['valid']:
-                    logger.warning(f"在分析结果 {latest_file} 中没有找到有效链接")
-                    self.update_workflow_status(workflow_id, "STEP3_ANALYSIS_COMPLETED", 
-                                            details={"message": "没有找到有效链接"})
-                    return workflow_id, []
-                
-                # 提取有效链接
-                valid_links = [link_info['link'] for link_info in analysis_results['valid'][:max_links]]
-                logger.info(f"从最新分析结果 {latest_file} 中获取了 {len(valid_links)} 个有效链接")
-            
-            if not valid_links:
-                logger.warning("没有找到有效链接，步骤3分析结束")
-                self.update_workflow_status(workflow_id, "STEP3_ANALYSIS_COMPLETED", 
-                                         details={"message": "没有有效链接"})
-                return workflow_id, []
-            
-            # 调用步骤3进行深度分析
-            logger.info(f"开始对 {len(valid_links)} 个有效链接进行步骤3分析")
-            
-            step3_results = []
-            for i, link in enumerate(valid_links, 1):
-                logger.info(f"步骤3分析链接 [{i}/{len(valid_links)}]: {link}")
-                
-                try:
-                    # 调用步骤3的SDK函数
-                    result = sdk_call(link)
+                # 否则，从数据库获取最新的有效链接
+                valid_links = db_utils.get_valid_links(max_links=max_links)
+                if valid_links:
+                    links_to_process = [link['link'] for link in valid_links]
+                    logger.info(f"从数据库获取 {len(links_to_process)} 个有效链接")
                     
-                    if result:
-                        # 保存结果到步骤3内容目录
-                        result_file = os.path.join(STEP3["content"], f"link_{workflow_id}_{i}.txt")
-                        with open(result_file, 'w', encoding='utf-8') as f:
-                            # 添加链接ID到结果中
-                            result_dict = json.loads(result)
-                            result_dict['link_id'] = f"{workflow_id}_{i}"
-                            f.write(json.dumps(result_dict, ensure_ascii=False, indent=2))
-                        
-                        step3_results.append({
-                            "link": link,
-                            "success": True,
-                            "result_file": result_file,
-                            "link_id": f"{workflow_id}_{i}"
-                        })
-                        logger.info(f"链接分析成功，结果已保存到 {result_file}")
+            if not links_to_process:
+                logger.warning("没有有效链接需要处理")
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={"message": "没有有效链接需要处理"})
+                return []
+                
+            # 使用SDK处理每个链接
+            processed_links = []
+            total_links = len(links_to_process)
+            
+            for i, link in enumerate(links_to_process):
+                try:
+                    logger.info(f"处理链接 [{i+1}/{total_links}]: {link}")
+                    
+                    # 为每个链接生成唯一的link_id
+                    link_id = f"{workflow_id}_link_{i+1}"
+                    
+                    # 使用SDK处理链接
+                    result_json = sdk_call(link, link_id, workflow_id)
+                    
+                    # 检查结果
+                    if result_json:
+                        processed_links.append(link)
+                        logger.info(f"链接处理成功: {link}")
                     else:
-                        step3_results.append({
-                            "link": link,
-                            "success": False,
-                            "error": "没有获取到响应"
-                        })
-                        logger.warning(f"链接分析失败，没有获取到响应")
+                        logger.warning(f"链接处理失败: {link}")
+                        
                 except Exception as e:
-                    error_msg = f"分析链接时出错: {str(e)}"
+                    error_msg = f"处理链接时出错 {link}: {str(e)}\n{traceback.format_exc()}"
                     logger.error(error_msg)
-                    step3_results.append({
-                        "link": link,
-                        "success": False,
-                        "error": error_msg
-                    })
-            
-            # 保存整体分析结果到步骤3摘要目录
-            summary_file = os.path.join(STEP3["summaries"], f"summary_{workflow_id}.json")
-            with open(summary_file, 'w', encoding='utf-8') as f:
-                json.dump({
-                    "workflow_id": workflow_id,
-                    "total_links": len(valid_links),
-                    "successful_analysis": sum(1 for r in step3_results if r["success"]),
-                    "failed_analysis": sum(1 for r in step3_results if not r["success"]),
-                    "results": step3_results
-                }, f, ensure_ascii=False, indent=2)
-            
+                    
             # 更新工作流状态
-            self.update_workflow_status(workflow_id, "STEP3_ANALYSIS_COMPLETED", 
-                                     details={
-                                         "total_links": len(valid_links),
-                                         "successful_analysis": sum(1 for r in step3_results if r["success"]),
-                                         "failed_analysis": sum(1 for r in step3_results if not r["success"])
-                                     })
+            self.update_workflow_status(workflow_id, "COMPLETED", 
+                                      details={
+                                          "total_links": total_links,
+                                          "processed_links": len(processed_links),
+                                          "failed_links": total_links - len(processed_links)
+                                      })
+                                      
+            logger.info(f"链接处理完成，成功: {len(processed_links)}, 失败: {total_links - len(processed_links)}")
+            return processed_links
             
-            logger.info(f"步骤3分析完成，分析了 {len(valid_links)} 个链接，其中 {sum(1 for r in step3_results if r['success'])} 个成功，{sum(1 for r in step3_results if not r['success'])} 个失败")
-            logger.info(f"分析摘要已保存到 {summary_file}")
-            
-            return workflow_id, step3_results
-        
         except Exception as e:
-            error_msg = f"步骤3分析出错: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"处理有效链接时出错: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
-            self.update_workflow_status(workflow_id, "STEP3_ANALYSIS_FAILED", error=error_msg)
-            return workflow_id, []
+            self.update_workflow_status(workflow_id, "FAILED", error=error_msg)
+            return []
 
     def run_complete_extended_workflow(self):
-        """运行完整的扩展工作流程：抓取 -> 分析 -> 深度分析"""
-        # 生成工作流ID
-        workflow_id = f"workflow_extended_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        try:
-            # 第一步：主页抓取
-            logger.info(f"启动完整扩展工作流，ID: {workflow_id}")
-            self.update_workflow_status(workflow_id, "EXTENDED_WORKFLOW_STARTED")
+        """运行扩展的完整工作流，包含四个步骤"""
+        workflow_id = f"extended_workflow_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        if len(workflow_id) > 50:
+            workflow_id = workflow_id[:50]
             
+        try:
+            # 更新工作流状态
+            self.update_workflow_status(workflow_id, "STARTED")
+            
+            # 步骤1：抓取新链接
+            results = self.handle_step1(workflow_id)
+            
+            if not results:
+                return workflow_id, None
+                
+            # 步骤2：分析链接
+            results = self.handle_step2(workflow_id, results.get('links'))
+            
+            if not results:
+                return workflow_id, None
+                
+            # 步骤3：处理有效链接
+            results = self.handle_step3(workflow_id, results.get('valid_links'))
+            
+            if results:
+                self.update_workflow_status(workflow_id, "COMPLETED", 
+                                          details={"message": "扩展工作流完成"})
+                                          
+            return workflow_id, results
+            
+        except Exception as e:
+            error_msg = f"运行扩展工作流时出错: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            self.update_workflow_status(workflow_id, "FAILED", error=error_msg)
+            return workflow_id, None
+            
+    def handle_step1(self, workflow_id, news_source=None):
+        """处理步骤1：抓取新链接"""
+        try:
+            logger.info("步骤1：开始抓取新链接")
+            
+            # 更新工作流状态
+            self.update_workflow_status(workflow_id, "STEP1_STARTED")
+            
+            # 抓取新链接
             _, links = self.start_homepage_scraping(workflow_id)
             
             if not links:
-                logger.info("没有新链接，工作流结束")
-                self.update_workflow_status(workflow_id, "EXTENDED_WORKFLOW_COMPLETED", 
-                                           details={"message": "没有新链接需要处理"})
-                return workflow_id, None
+                logger.info("没有发现新链接，步骤1完成")
+                self.update_workflow_status(workflow_id, "STEP1_COMPLETED", 
+                                          details={"message": "没有发现新链接"})
+                return None
+                
+            logger.info(f"步骤1完成，发现 {len(links)} 个新链接")
             
-            # 第二步：只分析最新一批链接（而不是所有links）
-            # 获取最新链接
-            latest_links = self.get_latest_links(50)  # 限制为最多50个最新链接
-            
-            if not latest_links:
-                logger.info("没有最新链接可分析，工作流结束")
-                self.update_workflow_status(workflow_id, "EXTENDED_WORKFLOW_COMPLETED", 
-                                           details={"message": "没有最新链接可分析"})
-                return workflow_id, None
-            
-            logger.info(f"开始分析最新的 {len(latest_links)} 个链接")
-            analysis_results = self.analyze_links(latest_links, workflow_id)
-            
-            if not analysis_results or not analysis_results.get('valid'):
-                logger.info("没有有效链接，工作流结束")
-                self.update_workflow_status(workflow_id, "EXTENDED_WORKFLOW_COMPLETED", 
-                                           details={"message": "没有有效链接需要深度分析"})
-                return workflow_id, None
-            
-            # 第三步：深度分析有效链接
-            valid_links = [link_info['link'] for link_info in analysis_results['valid']]
-            _, step3_results = self.process_valid_links(workflow_id, valid_links)
-            
-            # 更新工作流状态
-            self.update_workflow_status(workflow_id, "EXTENDED_WORKFLOW_COMPLETED")
-            
-            logger.info(f"完整扩展工作流已完成，ID: {workflow_id}")
-            return workflow_id, {
-                "step1_links_found": len(links),
-                "step2_latest_links_analyzed": len(latest_links),
-                "step2_valid_links": len(analysis_results['valid']),
-                "step3_results": step3_results
+            self.update_workflow_status(workflow_id, "STEP1_COMPLETED", 
+                                      details={"links_found": len(links)})
+                                      
+            return {
+                "links": links,
+                "count": len(links)
             }
             
         except Exception as e:
-            error_msg = f"扩展工作流执行出错: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"处理步骤1时出错: {str(e)}\n{traceback.format_exc()}"
             logger.error(error_msg)
-            self.update_workflow_status(workflow_id, "EXTENDED_WORKFLOW_FAILED", error=error_msg)
-            return workflow_id, None
+            self.update_workflow_status(workflow_id, "STEP1_FAILED", error=error_msg)
+            return None
+    
+    def handle_step2(self, workflow_id, links=None):
+        """处理步骤2：分析链接"""
+        try:
+            logger.info("步骤2：开始分析链接")
+            
+            # 更新工作流状态
+            self.update_workflow_status(workflow_id, "STEP2_STARTED")
+            
+            if not links:
+                # 如果没有提供链接，从数据库获取最新链接
+                links = self.get_latest_links(50)
+                
+            if not links:
+                logger.warning("没有链接需要分析，步骤2完成")
+                self.update_workflow_status(workflow_id, "STEP2_COMPLETED", 
+                                          details={"message": "没有链接需要分析"})
+                return None
+                
+            # 分析链接
+            if isinstance(links[0], dict):
+                link_urls = [link['link'] for link in links]
+            else:
+                link_urls = links
+                
+            _, results = self.analyze_links(link_urls, workflow_id)
+            
+            if not results:
+                logger.warning("链接分析没有结果，步骤2完成")
+                self.update_workflow_status(workflow_id, "STEP2_COMPLETED", 
+                                          details={"message": "链接分析没有结果"})
+                return None
+                
+            logger.info(f"步骤2完成，有效链接: {len(results['valid'])}, 无效链接: {len(results['invalid'])}, 失败: {len(results['failed'])}")
+            
+            self.update_workflow_status(workflow_id, "STEP2_COMPLETED", 
+                                      details={
+                                          "valid_count": len(results['valid']),
+                                          "invalid_count": len(results['invalid']),
+                                          "failed_count": len(results['failed'])
+                                      })
+                                      
+            return {
+                "valid_links": results['valid'],
+                "invalid_links": results['invalid'],
+                "failed_links": results['failed'],
+                "link_ids": results['link_ids']
+            }
+            
+        except Exception as e:
+            error_msg = f"处理步骤2时出错: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            self.update_workflow_status(workflow_id, "STEP2_FAILED", error=error_msg)
+            return None
+    
+    def handle_step3(self, workflow_id, links=None):
+        """处理步骤3：处理有效链接"""
+        try:
+            logger.info("步骤3：开始处理有效链接")
+            
+            # 更新工作流状态
+            self.update_workflow_status(workflow_id, "STEP3_STARTED")
+            
+            # 查找最近的工作流ID
+            latest_workflow = None
+            try:
+                # 查找最近的工作流ID
+                with db_utils.pg_connection() as cursor:
+                    cursor.execute(
+                        """SELECT workflow_id FROM step0_workflows 
+                        WHERE current_status = 'ANALYZED' 
+                        ORDER BY created_at DESC LIMIT 1"""
+                    )
+                    result = cursor.fetchone()
+                    if result:
+                        latest_workflow = result['workflow_id']
+                        logger.info(f"找到最近的工作流ID: {latest_workflow}")
+            except Exception as e:
+                logger.error(f"查找最近的工作流ID时出错: {str(e)}")
+                logger.error(traceback.format_exc())
+                # 继续处理，使用提供的链接或不带过滤的获取链接
+            
+            if not links:
+                # 如果没有提供链接，从数据库获取最新工作流的有效链接
+                valid_links_data = db_utils.get_valid_links(max_links=50, latest_workflow_id=latest_workflow)
+                if valid_links_data:
+                    links = [link['link'] for link in valid_links_data]
+                    logger.info(f"从最新工作流 {latest_workflow or '(未指定)'} 获取了 {len(links)} 个有效链接")
+                
+            if not links:
+                logger.warning("没有有效链接需要处理，步骤3完成")
+                self.update_workflow_status(workflow_id, "STEP3_COMPLETED", 
+                                          details={"message": "没有有效链接需要处理"})
+                return None
+                
+            # 更新工作流状态，显示正在处理的链接数量
+            self.update_workflow_status(workflow_id, "STEP3_PROCESSING", 
+                                      details={
+                                          "total_links": len(links),
+                                          "source_workflow": latest_workflow
+                                      })
+            
+            # 处理有效链接
+            try:
+                processed_links = self.process_valid_links(workflow_id, links, 50)
+                
+                logger.info(f"步骤3完成，成功处理了 {len(processed_links)} 个链接，共 {len(links)} 个")
+                
+                self.update_workflow_status(workflow_id, "STEP3_COMPLETED", 
+                                          details={
+                                              "processed_count": len(processed_links),
+                                              "total_count": len(links),
+                                              "source_workflow": latest_workflow
+                                          })
+                                          
+                return {
+                    "processed_links": processed_links,
+                    "total_links": len(links),
+                    "source_workflow": latest_workflow
+                }
+            except Exception as e:
+                error_msg = f"处理链接时出错: {str(e)}\n{traceback.format_exc()}"
+                logger.error(error_msg)
+                self.update_workflow_status(workflow_id, "STEP3_FAILED", 
+                                          error=error_msg,
+                                          details={
+                                              "total_links": len(links),
+                                              "source_workflow": latest_workflow
+                                          })
+                raise  # 重新抛出异常，让外层捕获
+            
+        except Exception as e:
+            error_msg = f"处理步骤3时出错: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            self.update_workflow_status(workflow_id, "STEP3_FAILED", error=error_msg)
+            return None
 
 # 创建工作流管理器实例
 workflow_manager = WorkflowManager()
@@ -657,7 +689,7 @@ def task_worker():
                 workflow_manager.process_valid_links(
                     task.get('workflow_id'),
                     task.get('input_links'),
-                    task.get('max_links', 10)
+                    task.get('max_links', 50)
                 )
             elif task['type'] == 'extended_workflow':
                 workflow_manager.run_complete_extended_workflow()
@@ -739,7 +771,12 @@ def step2_latest():
     
     max_links = data.get('max_links', 50)
     
-    workflow_id = f"workflow_step2_latest_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    # 修改：确保workflow_id不超过50个字符
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    workflow_id = f"workflow_step2_{timestamp}"
+    # 确保不超过50个字符
+    if len(workflow_id) > 50:
+        workflow_id = workflow_id[:50]
     
     # 将任务添加到队列
     task_queue.put({
@@ -764,7 +801,7 @@ def step3():
         data = {}
     
     workflow_id = data.get('workflow_id', f"workflow_step3_{datetime.now().strftime('%Y%m%d%H%M%S')}")
-    max_links = data.get('max_links', 10)
+    max_links = data.get('max_links', 50)
     input_links = data.get('links')
     
     # 将任务添加到队列
@@ -847,32 +884,15 @@ def get_all_workflows():
 # 路由: 获取链接状态
 @app.route('/api/link/<link_id>', methods=['GET'])
 def get_link_status(link_id):
-    # 首先在有效链接中查找
-    valid_links = {}
-    if os.path.exists(STEP2["valid_links"]):
-        with open(STEP2["valid_links"], 'r', encoding='utf-8') as f:
-            valid_links = json.load(f)
+    # 从数据库获取链接信息
+    link_data = db_utils.get_link_analysis(link_id)
     
-    if link_id in valid_links:
+    if link_data:
         return jsonify({
             'status': 'ok',
             'link_id': link_id,
-            'data': valid_links[link_id],
-            'type': 'valid'
-        })
-    
-    # 再在无效链接中查找
-    invalid_links = {}
-    if os.path.exists(STEP2["invalid_links"]):
-        with open(STEP2["invalid_links"], 'r', encoding='utf-8') as f:
-            invalid_links = json.load(f)
-    
-    if link_id in invalid_links:
-        return jsonify({
-            'status': 'ok',
-            'link_id': link_id,
-            'data': invalid_links[link_id],
-            'type': 'invalid'
+            'data': link_data,
+            'type': 'database'
         })
     
     # 找不到链接
@@ -880,57 +900,6 @@ def get_link_status(link_id):
         'status': 'error',
         'message': f'Link {link_id} not found'
     }), 404
-
-# 路由: 重新分析失败的链接
-@app.route('/api/reanalyze', methods=['POST'])
-def reanalyze_failed_links():
-    workflow_id = f"workflow_reanalyze_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    
-    # 从两个文件中获取所有链接
-    valid_links = {}
-    invalid_links = {}
-    
-    if os.path.exists(STEP2["valid_links"]):
-        with open(STEP2["valid_links"], 'r', encoding='utf-8') as f:
-            valid_links = json.load(f)
-    
-    if os.path.exists(STEP2["invalid_links"]):
-        with open(STEP2["invalid_links"], 'r', encoding='utf-8') as f:
-            invalid_links = json.load(f)
-    
-    # 查找状态为FAILED的链接
-    failed_links = []
-    for link_id, data in {**valid_links, **invalid_links}.items():
-        if data.get('current_status') == "FAILED":
-            failed_links.append(data.get('link'))
-    
-    if not failed_links:
-        return jsonify({
-            'status': 'ok',
-            'message': 'No failed links to reanalyze'
-        })
-    
-    # 更新工作流状态
-    workflow_manager.update_workflow_status(workflow_id, "REANALYSIS_STARTED", 
-                                          details={"failed_links_count": len(failed_links)})
-    
-    # 重新分析失败的链接
-    link_analyzer = LinkAnalyzer(
-        valid_links_file=STEP2["valid_links"],
-        invalid_links_file=STEP2["invalid_links"]
-    )
-    result = link_analyzer.process_links(failed_links)
-    
-    # 更新工作流状态
-    workflow_manager.update_workflow_status(workflow_id, "REANALYSIS_COMPLETED", 
-                                          details={"reanalyzed_count": len(result.get('valid', [])) + len(result.get('invalid', []))})
-    
-    return jsonify({
-        'status': 'ok',
-        'workflow_id': workflow_id,
-        'reanalyzed_count': len(result.get('valid', [])) + len(result.get('invalid', [])),
-        'message': f'Successfully reanalyzed {len(result.get("valid", [])) + len(result.get("invalid", []))} failed links'
-    })
 
 # 命令行入口点 - 直接运行
 if __name__ == '__main__':
@@ -967,16 +936,16 @@ if __name__ == '__main__':
                 # 打印有效链接
                 if results['valid']:
                     logger.info("\n有效链接:")
-                    for i, link_info in enumerate(results['valid'][:10], start=1):
+                    for i, link_info in enumerate(results['valid'][:50], start=1):
                         logger.info(f"{i}. {link_info['link']} (来源: {link_info['source']})")
-                    if len(results['valid']) > 10:
-                        logger.info(f"...还有 {len(results['valid'])-10} 个有效链接")
+                    if len(results['valid']) > 50:
+                        logger.info(f"...还有 {len(results['valid'])-50} 个有效链接")
             else:
                 logger.info(f"最新链接分析 {workflow_id} 未返回结果")
         elif sys.argv[1] == 'process-valid':
             # 运行步骤3分析
             logger.info("开始处理有效链接...")
-            max_links = 10
+            max_links = 50
             if len(sys.argv) > 2:
                 try:
                     max_links = int(sys.argv[2])

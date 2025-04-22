@@ -1,17 +1,19 @@
 import os
 import json
+import traceback
 from http import HTTPStatus
 from dashscope import Application
 import config
 import logging
 from datetime import datetime
 import uuid
+import db_utils
 
 # 配置日志系统
 log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
-log_file = os.path.join(log_dir, f"link_test_{datetime.now().strftime('%Y%m%d')}.log")
+log_file = os.path.join(log_dir, f"link_analyzer_{datetime.now().strftime('%Y%m%d')}.log")
 
 # 配置日志格式
 logging.basicConfig(
@@ -22,7 +24,7 @@ logging.basicConfig(
         logging.StreamHandler()  # 同时输出到控制台
     ]
 )
-logger = logging.getLogger("LinkTest")
+logger = logging.getLogger("LinkAnalyzer")
 
 # 检查环境变量是否正确设置
 if not config.check_env_vars():
@@ -32,47 +34,12 @@ if not config.check_env_vars():
 class LinkAnalyzer:
     """链接分析器，判断链接是否需要爬取"""
     
-    def __init__(self, data_dir=None, valid_links_file=None, invalid_links_file=None):
-        """初始化链接分析器
-        
-        参数:
-            data_dir: 数据目录，如果指定了valid_links_file和invalid_links_file则忽略此参数
-            valid_links_file: 有效链接存储文件路径
-            invalid_links_file: 无效链接存储文件路径
-        """
-        # 如果指定了文件路径，直接使用
-        if valid_links_file and invalid_links_file:
-            self.valid_links_file = valid_links_file
-            self.invalid_links_file = invalid_links_file
-            self.status_file = os.path.join(os.path.dirname(valid_links_file), "link_status.json")
-        # 否则基于data_dir构建路径（向后兼容）
-        elif data_dir:
-            self.valid_links_file = os.path.join(data_dir, "valid_links.json")
-            self.invalid_links_file = os.path.join(data_dir, "invalid_links.json")
-            self.status_file = os.path.join(data_dir, "link_status.json")
-        else:
-            # 默认路径
-            self.valid_links_file = "data/valid_links.json"
-            self.invalid_links_file = "data/invalid_links.json"
-            self.status_file = "data/link_status.json"
-            
-        # 确保文件存在
-        self._ensure_file_exists(self.valid_links_file)
-        self._ensure_file_exists(self.invalid_links_file)
-        self._ensure_file_exists(self.status_file)
-        
+    def __init__(self):
+        """初始化链接分析器"""
         # 使用config.py中定义的APP_ID
         self.app_id = config.LINK_ANALYZER_APP_ID
         
-        logger.info(f"使用百炼应用ID: {self.app_id}")
-        
-    def _ensure_file_exists(self, file_path):
-        """确保文件存在，如果不存在则创建空文件"""
-        if not os.path.exists(os.path.dirname(file_path)):
-            os.makedirs(os.path.dirname(file_path))
-        if not os.path.exists(file_path):
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump({}, f, ensure_ascii=False)
+        logger.info(f"初始化链接分析器，使用百炼应用ID: {self.app_id}")
         
     def _extract_json_from_text(self, text):
         """从文本中提取JSON内容"""
@@ -84,18 +51,32 @@ class LinkAnalyzer:
                 json_str = text[start:end+1]
                 return json.loads(json_str)
             return None
-        except json.JSONDecodeError:
-            logger.error(f"JSON解析失败: {text}")
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON解析失败: {str(e)}, 文本: {text[:200]}...")
             return None
         
-    def analyze_link(self, link, link_id=None):
-        """分析单个链接，返回分析结果和链接ID"""
+    def analyze_link(self, link, link_id=None, workflow_id=None):
+        """
+        分析单个链接，返回分析结果和链接ID
+        
+        参数:
+        link - 要分析的链接
+        link_id - 链接ID，如果为None则自动生成
+        workflow_id - 工作流ID，如果为None则将link_id作为workflow_id
+        """
+        start_time = datetime.now()
+        
         if link_id is None:
             link_id = str(uuid.uuid4())
             
+        if workflow_id is None:
+            workflow_id = link_id  # 如果单独调用，则使用link_id作为workflow_id
+            
         try:
             # 更新链接状态为"分析中"
-            self.update_link_status(link_id, link, "ANALYZING")
+            db_utils.update_workflow_status(link_id, "ANALYZING", details={"link": link})
+            
+            logger.info(f"开始分析链接: {link}, ID: {link_id}")
             
             response = Application.call(
                 api_key=config.DASHSCOPE_API_KEY,
@@ -103,9 +84,24 @@ class LinkAnalyzer:
                 prompt=link  # 直接传入链接作为prompt
             )
             
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            
             if response.status_code != HTTPStatus.OK:
-                logger.error(f'请求失败: {response.message}')
-                self.update_link_status(link_id, link, "FAILED", error=response.message)
+                error_message = f'请求失败: {response.message}, 耗时: {elapsed_time:.2f}秒'
+                logger.error(error_message)
+                db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
+                
+                # 保存分析结果到数据库，标记为失败
+                db_utils.save_link_analysis(
+                    link_id, 
+                    link, 
+                    False,  # is_valid = False
+                    {"error": error_message, "response_code": response.status_code}, 
+                    workflow_id,
+                    0,  # confidence = 0
+                    error_message
+                )
+                
                 return None, link_id
                 
             # 解析返回的JSON
@@ -115,133 +111,77 @@ class LinkAnalyzer:
                 is_valid = result.get('need_crawl', False)
                 status = "VALID" if is_valid else "INVALID"
                 
-                # 更新链接状态
-                self.update_link_status(link_id, link, status, result=result)
+                # 添加处理时间和原始链接到结果中
+                result["process_time"] = f"{elapsed_time:.2f}秒"
+                result["link"] = link
                 
-                # 保存分析结果
-                self.save_result(link, result, is_valid, link_id)
+                # 更新链接状态
+                db_utils.update_workflow_status(link_id, status, details=result)
+                
+                # 保存分析结果到数据库
+                confidence = result.get('confidence', 0)
+                reason = result.get('reason', '')
+                db_utils.save_link_analysis(
+                    link_id, 
+                    link, 
+                    is_valid, 
+                    result, 
+                    workflow_id,  # 使用传入的workflow_id
+                    confidence, 
+                    reason
+                )
+                
+                logger.info(f"链接分析完成，链接: {link}, 结果: {status}, 理由: {reason}, 耗时: {elapsed_time:.2f}秒")
                 return result, link_id
             else:
-                logger.error(f"无法从响应中提取JSON: {response.output.text}")
-                self.update_link_status(link_id, link, "FAILED", error="无法解析JSON响应")
+                error_message = f"无法从响应中提取JSON: {response.output.text[:200]}..."
+                logger.error(error_message)
+                db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
+                
+                # 保存分析结果到数据库，标记为失败
+                db_utils.save_link_analysis(
+                    link_id, 
+                    link, 
+                    False,  # is_valid = False
+                    {"error": error_message, "raw_response": response.output.text[:500]}, 
+                    workflow_id,
+                    0,  # confidence = 0
+                    error_message
+                )
+                
                 return None, link_id
                 
         except Exception as e:
-            error_msg = str(e)
-            logger.error(f"分析链接时出错: {error_msg}")
-            self.update_link_status(link_id, link, "FAILED", error=error_msg)
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            error_message = f"分析链接时出错: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_message)
+            
+            db_utils.update_workflow_status(link_id, "FAILED", error=str(e))
+            
+            # 保存分析结果到数据库，标记为失败
+            db_utils.save_link_analysis(
+                link_id, 
+                link, 
+                False,  # is_valid = False
+                {"error": str(e)}, 
+                workflow_id,
+                0,  # confidence = 0
+                str(e)
+            )
+            
             return None, link_id
-
-    def update_link_status(self, link_id, link, status, result=None, error=None):
-        """更新链接状态"""
-        try:
-            status_data = {}
-            if os.path.exists(self.status_file):
-                with open(self.status_file, 'r', encoding='utf-8') as f:
-                    status_data = json.load(f)
-            
-            # 更新状态
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            if link_id not in status_data:
-                status_data[link_id] = {
-                    'link': link,
-                    'created_at': timestamp,
-                    'history': []
-                }
-            
-            # 添加新状态记录
-            new_status = {
-                'status': status,
-                'timestamp': timestamp
-            }
-            
-            if result:
-                new_status['result'] = result
-            
-            if error:
-                new_status['error'] = error
-            
-            status_data[link_id]['history'].append(new_status)
-            status_data[link_id]['current_status'] = status
-            status_data[link_id]['updated_at'] = timestamp
-            
-            # 保存状态数据
-            with open(self.status_file, 'w', encoding='utf-8') as f:
-                json.dump(status_data, f, ensure_ascii=False, indent=2)
-                
-            logger.debug(f"链接 {link_id} 状态已更新为 {status}")
-            
-        except Exception as e:
-            logger.error(f"更新链接状态时出错: {e}")
-
-    def save_result(self, link, result, is_valid, link_id):
-        """保存分析结果"""
-        try:
-            # 选择保存文件
-            target_file = self.valid_links_file if is_valid else self.invalid_links_file
-            
-            # 读取现有数据
-            existing_data = {}
-            if os.path.exists(target_file):
-                with open(target_file, 'r', encoding='utf-8') as f:
-                    existing_data = json.load(f)
-            
-            # 添加新数据
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            if timestamp not in existing_data:
-                existing_data[timestamp] = {}
-            
-            existing_data[timestamp][link] = {
-                'link_id': link_id,
-                'result': result,
-                'analyzed_at': timestamp
-            }
-            
-            # 保存数据
-            with open(target_file, 'w', encoding='utf-8') as f:
-                json.dump(existing_data, f, ensure_ascii=False, indent=2)
-                
-            logger.info(f"链接分析结果已保存到 {target_file}")
-            
-        except Exception as e:
-            logger.error(f"保存结果时出错: {e}")
-
-    def get_link_status(self, link_id):
-        """获取链接状态"""
-        try:
-            if os.path.exists(self.status_file):
-                with open(self.status_file, 'r', encoding='utf-8') as f:
-                    status_data = json.load(f)
-                
-                if link_id in status_data:
-                    return status_data[link_id]
-            
-            return None
-        except Exception as e:
-            logger.error(f"获取链接状态时出错: {e}")
-            return None
-
-    def get_all_link_status(self, status_filter=None):
-        """获取所有链接状态，可选按状态筛选"""
-        try:
-            if os.path.exists(self.status_file):
-                with open(self.status_file, 'r', encoding='utf-8') as f:
-                    status_data = json.load(f)
-                
-                if status_filter:
-                    return {k: v for k, v in status_data.items() 
-                            if v.get('current_status') == status_filter}
-                return status_data
-            
-            return {}
-        except Exception as e:
-            logger.error(f"获取所有链接状态时出错: {e}")
-            return {}
 
     def process_links(self, links, batch_id=None):
         """处理多个链接，支持批处理ID"""
+        start_time = datetime.now()
+        
         if batch_id is None:
             batch_id = f"batch_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            
+        # 确保workflow_id不超过50个字符
+        workflow_id = batch_id
+        if len(workflow_id) > 50:
+            workflow_id = workflow_id[:50]
             
         results = {
             'batch_id': batch_id,
@@ -254,98 +194,236 @@ class LinkAnalyzer:
         total_links = len(links)
         processed_links = 0
         
+        # 更新批次工作流状态为开始
+        db_utils.update_workflow_status(workflow_id, "ANALYSIS_START", 
+                                      details={"total_links": total_links})
+        
+        logger.info(f"开始批量分析 {total_links} 个链接，批次ID: {batch_id}")
+        
         for link in links:
             processed_links += 1
-            link_id = f"{batch_id}_{processed_links}"
+            # 为每个链接生成唯一ID，但不作为workflow_id使用
+            link_id = f"{batch_id[:35]}_{processed_links}"
             logger.info(f"\n正在分析链接 [{processed_links}/{total_links}]: {link}")
             
-            result, link_id = self.analyze_link(link, link_id)
-            # 将链接ID添加到结果中
-            results['link_ids'][link] = link_id
-            
-            if result:
-                is_valid = result.get('need_crawl', False)
-                if is_valid:
-                    results['valid'].append(link)
-                    logger.info(f"有效链接: {link}")
-                    logger.info(f"原因: {result.get('reason', '')}")
-                    logger.info(f"置信度: {result.get('confidence', 0)}")
+            try:
+                # 调用百炼应用分析链接
+                response = Application.call(
+                    api_key=config.DASHSCOPE_API_KEY,
+                    app_id=self.app_id,
+                    prompt=link  # 直接传入链接作为prompt
+                )
+                
+                if response.status_code != HTTPStatus.OK:
+                    logger.error(f'请求失败: {response.message}')
+                    results['failed'].append(link)
+                    results['link_ids'][link] = link_id
+                    
+                    # 保存分析结果到数据库，标记为失败
+                    db_utils.save_link_analysis(
+                        link_id, 
+                        link, 
+                        False,  # is_valid = False
+                        {"error": response.message, "response_code": response.status_code}, 
+                        workflow_id,
+                        0,  # confidence = 0
+                        response.message
+                    )
+                    
+                    continue
+                    
+                # 解析返回的JSON
+                result = self._extract_json_from_text(response.output.text)
+                if result:
+                    # 判断链接是否有效
+                    is_valid = result.get('need_crawl', False)
+                    status = "VALID" if is_valid else "INVALID"
+                    
+                    # 保存分析结果到数据库
+                    confidence = result.get('confidence', 0)
+                    reason = result.get('reason', '')
+                    db_utils.save_link_analysis(
+                        link_id, 
+                        link, 
+                        is_valid, 
+                        result, 
+                        workflow_id,  # 使用批次工作流ID
+                        confidence, 
+                        reason
+                    )
+                    
+                    # 将链接ID添加到结果中
+                    results['link_ids'][link] = link_id
+                    
+                    if is_valid:
+                        results['valid'].append(link)
+                        logger.info(f"有效链接: {link}")
+                        logger.info(f"原因: {result.get('reason', '')}")
+                        logger.info(f"置信度: {result.get('confidence', 0)}")
+                    else:
+                        results['invalid'].append(link)
+                        logger.info(f"无效链接: {link}")
+                        logger.info(f"原因: {result.get('reason', '')}")
+                        logger.info(f"置信度: {result.get('confidence', 0)}")
                 else:
-                    results['invalid'].append(link)
-                    logger.info(f"无效链接: {link}")
-                    logger.info(f"原因: {result.get('reason', '')}")
-                    logger.info(f"置信度: {result.get('confidence', 0)}")
-            else:
+                    error_message = f"无法从响应中提取JSON: {response.output.text[:200]}..."
+                    logger.error(error_message)
+                    results['failed'].append(link)
+                    results['link_ids'][link] = link_id
+                    
+                    # 保存分析结果到数据库，标记为失败
+                    db_utils.save_link_analysis(
+                        link_id, 
+                        link, 
+                        False,  # is_valid = False
+                        {"error": error_message, "raw_response": response.output.text[:500]}, 
+                        workflow_id,
+                        0,  # confidence = 0
+                        error_message
+                    )
+                
+            except Exception as e:
+                error_message = f"分析链接时出错: {str(e)}\n{traceback.format_exc()}"
+                logger.error(error_message)
                 results['failed'].append(link)
-                logger.warning(f"无法分析链接: {link}")
+                results['link_ids'][link] = link_id
+                
+                # 保存分析结果到数据库，标记为失败
+                db_utils.save_link_analysis(
+                    link_id, 
+                    link, 
+                    False,  # is_valid = False
+                    {"error": str(e)}, 
+                    workflow_id,
+                    0,  # confidence = 0
+                    str(e)
+                )
+        
+        # 保存批量分析结果
+        db_utils.save_analysis_batch(workflow_id, batch_id, results)
+        
+        # 计算总耗时
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        
+        # 更新批次工作流状态为完成
+        db_utils.update_workflow_status(workflow_id, "ANALYZED", 
+                                      details={
+                                          "valid_count": len(results['valid']),
+                                          "invalid_count": len(results['invalid']),
+                                          "failed_count": len(results['failed']),
+                                          "total_time": f"{elapsed_time:.2f}秒"
+                                      })
+        
+        logger.info(f"批量分析完成，总耗时: {elapsed_time:.2f}秒")
+        logger.info(f"有效链接: {len(results['valid'])}, 无效链接: {len(results['invalid'])}, 失败链接: {len(results['failed'])}")
         
         return results
 
     def reanalyze_failed_links(self, max_retries=3):
         """重新分析失败的链接"""
-        failed_links = self.get_all_link_status("FAILED")
-        retry_links = []
+        start_time = datetime.now()
         
-        for link_id, data in failed_links.items():
-            # 检查重试次数
-            retry_count = sum(1 for status in data.get('history', []) 
-                             if status.get('status') == "FAILED")
+        # 生成新的批次工作流ID
+        reanalysis_batch_id = f"reanalysis_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        workflow_id = reanalysis_batch_id
+        if len(workflow_id) > 50:
+            workflow_id = workflow_id[:50]
             
-            if retry_count < max_retries:
-                retry_links.append((link_id, data['link']))
+        # 从数据库获取所有失败的链接
+        failed_status = "FAILED"
+        failed_workflows = db_utils.get_all_workflow_status(failed_status)
+        
+        retry_links = []
+        link_id_map = {}  # 用于存储原始link_id和链接的映射
+        
+        for wf_id, data in failed_workflows.items():
+            # 跳过已超过重试次数的工作流
+            retry_count = sum(1 for status in data.get('history', []) 
+                             if status.get('status') == failed_status)
+            
+            if retry_count >= max_retries:
+                continue
+                
+            # 获取该工作流中的所有链接
+            cursor = None
+            conn = None
+            try:
+                import psycopg2
+                import psycopg2.extras
+                conn = psycopg2.connect(**config.PG_CONFIG)
+                cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                
+                # 查询该工作流下所有失败的链接
+                cursor.execute("""
+                    SELECT link_id, link FROM step2_link_analysis 
+                    WHERE workflow_id = %s AND is_valid = FALSE
+                """, (wf_id,))
+                
+                for row in cursor.fetchall():
+                    link_id = row['link_id']
+                    link = row['link']
+                    retry_links.append(link)
+                    link_id_map[link] = link_id
+                    
+            except Exception as e:
+                error_message = f"获取失败链接时出错: {str(e)}\n{traceback.format_exc()}"
+                logger.error(error_message)
+            finally:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
         
         if not retry_links:
             logger.info("没有需要重试的失败链接")
             return []
         
-        logger.info(f"开始重试 {len(retry_links)} 个失败的链接分析")
-        results = []
+        logger.info(f"开始重新分析 {len(retry_links)} 个失败的链接")
         
-        for link_id, link in retry_links:
-            logger.info(f"重试分析链接: {link} (ID: {link_id})")
-            result, _ = self.analyze_link(link, link_id)
-            if result:
-                results.append((link_id, link, result))
+        # 更新工作流状态
+        db_utils.update_workflow_status(workflow_id, "REANALYSIS_START", 
+                                      details={"failed_links_count": len(retry_links)})
+        
+        # 使用process_links处理失败链接
+        results = self.process_links(retry_links, reanalysis_batch_id)
+        
+        # 计算总耗时
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        
+        logger.info(f"重新分析完成，总耗时: {elapsed_time:.2f}秒")
+        logger.info(f"有效链接: {len(results['valid'])}, " 
+                   f"无效链接: {len(results['invalid'])}, "
+                   f"失败链接: {len(results['failed'])}")
         
         return results
 
-def main():
-    """主函数"""
-    # 示例链接列表
-    test_links = [
-        "https://example.com/agriculture-news",
-        "https://example.com/farming-policy",
-        "https://example.com/weather-impact"
-    ]
-    
-    analyzer = LinkAnalyzer()
-    results = analyzer.process_links(test_links)
-    
-    logger.info("\n分析结果统计:")
-    logger.info(f"批次ID: {results['batch_id']}")
-    logger.info(f"有效链接数量: {len(results['valid'])}")
-    logger.info(f"无效链接数量: {len(results['invalid'])}")
-    logger.info(f"失败链接数量: {len(results['failed'])}")
-    
-    if results['valid']:
-        logger.info("\n有效链接列表:")
-        for link in results['valid']:
-            logger.info(f"- {link} (ID: {results['link_ids'][link]})")
-    
-    if results['invalid']:
-        logger.info("\n无效链接列表:")
-        for link in results['invalid']:
-            logger.info(f"- {link} (ID: {results['link_ids'][link]})")
-    
-    if results['failed']:
-        logger.info("\n失败链接列表:")
-        for link in results['failed']:
-            logger.info(f"- {link} (ID: {results['link_ids'][link]})")
-
 if __name__ == "__main__":
     try:
-        main()
+        # 初始化链接分析器
+        analyzer = LinkAnalyzer()
+        
+        # 测试链接列表
+        test_links = [
+            "https://example.com/agriculture-news",
+            "https://example.com/farming-policy",
+            "https://example.com/weather-impact"
+        ]
+        
+        # 使用一个明确的batch_id进行测试
+        test_batch_id = f"test_batch_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # 分析链接
+        logger.info(f"开始测试分析 {len(test_links)} 个链接")
+        results = analyzer.process_links(test_links, test_batch_id)
+        
+        # 打印分析结果统计
+        logger.info("\n分析结果统计:")
+        logger.info(f"批次ID: {results['batch_id']}")
+        logger.info(f"有效链接数量: {len(results['valid'])}")
+        logger.info(f"无效链接数量: {len(results['invalid'])}")
+        logger.info(f"失败链接数量: {len(results['failed'])}")
+        
     except KeyboardInterrupt:
         logger.info("检测到用户中断，程序退出")
     except Exception as e:
-        logger.error(f"程序执行出错: {e}") 
+        logger.error(f"程序执行出错: {str(e)}\n{traceback.format_exc()}") 

@@ -1,322 +1,305 @@
-# 新闻监控与分析系统
+# 新闻内容处理系统 (MCP)
 
-这是一个集成的新闻监控与分析系统，用于自动抓取、验证和分析新闻链接。系统通过工作流引擎和状态管理机制，将不同组件连接成一个完整的处理管道。
+一个基于Python、Flask和双数据库的系统，用于自动化新闻内容处理和分析的ETL流程。
+
+## 项目概述
+
+本系统是一个完整的ETL(Extract-Transform-Load)管道，用于:
+1. 从已配置的新闻网站抓取内容
+2. 分析链接有效性
+3. 抓取和处理有效链接的内容
+4. 存储分析结果到数据库中
+
+系统由三个主要步骤组成，每个步骤可以独立运行，也可以作为完整工作流一起运行。所有数据通过PostgreSQL和MySQL数据库存储和共享，不依赖本地文件存储。
 
 ## 系统架构
 
-系统由以下主要组件构成：
+### 组件结构
 
-1. **主页抓取器** (步骤 1)：
-   - 从Excel文件中读取主页URL
-   - 定期抓取主页链接并与历史记录比较
-   - 发现新链接并保存
+- **步骤1 (Homepage Scraping)**: 抓取配置的主页并发现新链接，使用FireCrawl API
+- **步骤2 (Link Analysis)**: 分析链接有效性，使用百炼应用判断链接是否有价值
+- **步骤3 (Content Processing)**: 处理有效链接的内容，使用SDK进行内容抓取和解析
+- **工作流管理**: 协调各步骤间的数据流转，提供状态跟踪
+- **REST API**: 提供HTTP接口访问各功能，支持异步任务处理
 
-2. **链接分析器** (步骤 2)：
-   - 对链接进行分析以确定是否与目标主题相关
-   - 使用百炼智能体进行内容相关性判断
-   - 记录分析结果和链接状态
+### 技术栈
 
-3. **深度内容抓取器** (步骤 3)：
-   - 对步骤2筛选出的有效链接进行深度内容抓取
-   - 使用DashScope API提取页面内容
-   - 保存完整的页面内容用于后续分析
+- **后端**: Flask，Python 3.8+
+- **数据库**: 
+  - PostgreSQL: 存储链接分析和工作流数据
+  - MySQL: 存储内容结果和网站配置
+- **外部API**:
+  - DashScope: 用于AI内容分析
+  - FireCrawl: 用于网页抓取
+  - 百炼应用: 用于链接分析和内容处理
 
-4. **工作流管理器**：
-   - 协调三个步骤之间的数据流
-   - 维护状态管理系统
-   - 提供重试和错误恢复机制
+### 数据流
 
-5. **API服务器**：
-   - 提供REST API接口供外部系统调用
-   - 支持各种操作如启动抓取、分析链接等
-   - 允许查询工作流和链接状态
+1. 从MySQL数据库读取主页URL配置
+2. 抓取主页，发现新链接，保存到PostgreSQL
+3. 链接分析确定哪些链接值得进一步处理
+4. 内容抓取和处理，结果保存到MySQL的news_content.step3_content表
 
-## 数据流
+## 安装和部署
 
-系统支持三种主要的数据流路径：
+### 需求
 
-1. **步骤1**: 主页抓取 → 新链接保存
-2. **步骤1+2**: 主页抓取 → 新链接发现 → 链接分析 → 结果存储
-3. **步骤1+2+3**: 主页抓取 → 新链接发现 → 链接分析 → 有效链接深度抓取 → 内容存储
+- Python 3.8+
+- PostgreSQL 13+
+- MySQL 8+
+- API密钥 (DashScope, FireCrawl, 百炼)
 
-## 安装和配置
+### 安装步骤
 
-1. 安装依赖：
+1. 克隆仓库
+```bash
+git clone <repository-url>
+cd mcp
+```
+
+2. 安装依赖
 ```bash
 pip install -r requirements.txt
 ```
 
-2. 配置环境变量：
-在项目根目录创建 `.env` 文件，包含以下配置：
+3. 配置环境变量 (`.env` 文件)
 ```
-DASHSCOPE_API_KEY=your_api_key
-BAILIAN_APP_ID=your_app_id
-FIRECRAWL_API_KEY=your_api_key
-LINK_ANALYZER_APP_ID=your_app_id
+DASHSCOPE_API_KEY=your_dashscope_key
+BAILIAN_APP_ID=your_bailian_app_id
+FIRECRAWL_API_KEY=your_firecrawl_key
+LINK_ANALYZER_APP_ID=your_link_analyzer_app_id
+
+PG_HOST=your_postgres_host
+PG_PORT=5432
+PG_USER=postgres
+PG_PASSWORD=your_password
+PG_DATABASE=postgres
+
+MYSQL_HOST=your_mysql_host
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=news_content
 ```
 
-3. 准备Excel文件：
-创建 `testhomepage.xlsx` 文件，包含以下列：
-- link: 主页URL
-- 备注: 备注信息
-- 来源: 来源信息
-
-## 运行系统
-
-### 命令行模式
-
-1. 运行完整工作流（步骤1+2）：
+4. 创建数据库表
 ```bash
-python app.py run-workflow
+python create_postgresql_tables.py
+python create_mysql_tables.py
 ```
 
-2. 只分析最新抓取的链接（步骤2）：
-```bash
-python app.py analyze-latest [max_links]
-```
-
-3. 处理有效链接进行深度分析（步骤3）：
-```bash
-python app.py process-valid [max_links]
-```
-
-4. 运行完整扩展工作流（步骤1+2+3）：
-```bash
-python app.py extended-workflow
-```
-
-### API服务器模式
-
-启动API服务器：
+5. 启动服务器
 ```bash
 python app.py
 ```
 
-默认情况下，服务器将在 http://127.0.0.1:5000 上运行。
+## 使用方法
 
-## API端点详细说明
+### API 端点
 
-### 1. 主页抓取 (步骤1)
+| 端点 | 方法 | 描述 |
+|------|------|------|
+| `/api/step1` | POST | 运行步骤1 (主页抓取) |
+| `/api/step2` | POST | 运行步骤2 (链接分析) |
+| `/api/step2/latest` | POST | 分析最新抓取的链接 |
+| `/api/step3` | POST | 运行步骤3 (内容处理) |
+| `/api/workflow/step1to2` | POST | 运行完整工作流 (步骤1+2) |
+| `/api/workflow/all` | POST | 运行完整工作流 (步骤1+2+3) |
+| `/api/workflow/<workflow_id>` | GET | 获取工作流状态 |
+| `/api/workflows` | GET | 获取所有工作流状态 |
+| `/api/link/<link_id>` | GET | 获取链接状态 |
+| `/api/reanalyze` | POST | 重新分析失败的链接 |
 
-**端点**: `/api/step1`  
-**方法**: POST  
-**功能**: 从配置的Excel文件中读取主页URL，抓取这些页面上的链接，并与历史记录比较找出新链接
+### 命令行使用
 
-**生成的数据文件**:
-- `scrape_link_cache.json`: 所有历史链接的缓存
-- `scrape_new_links.json`: 按时间戳组织的新发现链接
-
-**示例请求**:
 ```bash
-curl -X POST http://localhost:5000/api/step1
+# 运行完整工作流 (步骤1+2)
+python app.py run-workflow
+
+# 分析最新抓取的链接 (最多50个)
+python app.py analyze-latest 50
+
+# 处理有效链接 (最多10个)
+python app.py process-valid 10
+
+# 运行完整扩展工作流 (步骤1+2+3)
+python app.py extended-workflow
 ```
 
-**示例响应**:
-```json
-{
-  "status": "accepted",
-  "workflow_id": "workflow_step1_20250414153034",
-  "message": "Homepage scraping task has been queued"
-}
-```
+## 数据库结构
 
-### 2. 指定链接分析 (步骤2)
+系统使用两个数据库来存储不同类型的数据：
+1. PostgreSQL 用于存储工作流状态和链接分析数据
+2. MySQL 用于存储内容处理结果和主页配置
 
-**端点**: `/api/step2`  
-**方法**: POST  
-**功能**: 分析提供的链接列表，确定每个链接是否与目标主题相关
+### PostgreSQL 表
+PostgreSQL服务器运行在 47.86.227.107:5432，使用postgres/root_password认证。
 
-**请求参数**:
-```json
-{
-  "links": [
-    {
-      "link": "https://example.com/news",
-      "source": "Example News",
-      "note": "Example homepage"
-    }
-  ]
-}
-```
+- **step0_workflows**: 工作流状态跟踪
+  ```sql
+  CREATE TABLE step0_workflows (
+      workflow_id VARCHAR(50) PRIMARY KEY,
+      created_at TIMESTAMP NOT NULL,
+      updated_at TIMESTAMP NOT NULL,
+      current_status VARCHAR(20) NOT NULL,
+      details JSONB
+  );
+  ```
 
-**生成的数据文件**:
-- `valid_links.json`: 有效链接及分析结果
-- `invalid_links.json`: 无效链接及分析结果
-- `analysis_results/analysis_{workflow_id}.json`: 完整分析结果汇总
+- **step0_workflow_history**: 工作流状态历史记录
+  ```sql
+  CREATE TABLE step0_workflow_history (
+      id SERIAL PRIMARY KEY,
+      workflow_id VARCHAR(50) REFERENCES step0_workflows(workflow_id),
+      status VARCHAR(20) NOT NULL,
+      timestamp TIMESTAMP NOT NULL,
+      details JSONB,
+      error TEXT
+  );
+  ```
 
-**示例请求**:
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"links":[{"link":"https://example.com/news","source":"Example News","note":"Example homepage"}]}' http://localhost:5000/api/step2
-```
+- **step1_link_cache**: 历史链接缓存
+  ```sql
+  CREATE TABLE step1_link_cache (
+      homepage_url TEXT NOT NULL,
+      link TEXT NOT NULL,
+      created_at TIMESTAMP NOT NULL,
+      PRIMARY KEY (homepage_url, link)
+  );
+  ```
 
-### 3. 分析最新抓取的链接 (步骤2)
+- **step1_new_links**: 新发现的链接
+  ```sql
+  CREATE TABLE step1_new_links (
+      id SERIAL PRIMARY KEY,
+      timestamp TIMESTAMP NOT NULL,
+      homepage_url TEXT NOT NULL,
+      link TEXT NOT NULL,
+      source TEXT,
+      note TEXT,
+      batch_id VARCHAR(50) NOT NULL,
+      created_at TIMESTAMP NOT NULL
+  );
+  ```
 
-**端点**: `/api/step2/latest`  
-**方法**: POST  
-**功能**: 获取步骤1最近抓取的链接，并进行分析判断
+- **step2_link_analysis**: 链接分析结果
+  ```sql
+  CREATE TABLE step2_link_analysis (
+      link_id VARCHAR(50) PRIMARY KEY,
+      link TEXT NOT NULL,
+      is_valid BOOLEAN NOT NULL,
+      analysis_result JSONB,
+      confidence FLOAT,
+      reason TEXT,
+      workflow_id VARCHAR(50) REFERENCES step0_workflows(workflow_id),
+      created_at TIMESTAMP NOT NULL,
+      updated_at TIMESTAMP NOT NULL
+  );
+  ```
 
-**请求参数**:
-```json
-{
-  "max_links": 50  // 可选，默认分析50个链接
-}
-```
+- **step2_analysis_results**: 批量分析结果
+  ```sql
+  CREATE TABLE step2_analysis_results (
+      id SERIAL PRIMARY KEY,
+      workflow_id VARCHAR(50) REFERENCES step0_workflows(workflow_id),
+      batch_id VARCHAR(50) NOT NULL,
+      analysis_data JSONB NOT NULL,
+      created_at TIMESTAMP NOT NULL
+  );
+  ```
 
-**生成的数据文件**:
-- `valid_links.json`: 有效链接及分析结果
-- `invalid_links.json`: 无效链接及分析结果
-- `analysis_results/analysis_{workflow_id}.json`: 分析结果汇总
+### MySQL 表
+MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 
-**示例请求**:
-```bash
-curl -X POST http://localhost:5000/api/step2/latest
-curl -X POST -H "Content-Type: application/json" -d '{"max_links": 100}' http://localhost:5000/api/step2/latest
-```
+- **news_content.step3_content**: 内容处理结果
+  ```sql
+  CREATE TABLE step3_content (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      link_id VARCHAR(50) NOT NULL,
+      title TEXT,
+      content LONGTEXT,
+      event_tags JSON,
+      space_tags JSON,
+      cat_tags JSON,
+      publish_time DATE,
+      importance VARCHAR(20),
+      state JSON,
+      source_note TEXT,
+      homepage_url VARCHAR(255),
+      workflow_id VARCHAR(50),
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY (link_id)
+  );
+  ```
 
-### 4. 处理有效链接 (步骤3)
+- **homepage_urls**: 要抓取的主页配置
+  ```sql
+  CREATE TABLE homepage_urls (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      link VARCHAR(255) NOT NULL,
+      source VARCHAR(100),
+      note TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY (link)
+  );
+  ```
 
-**端点**: `/api/step3`  
-**方法**: POST  
-**功能**: 处理步骤2筛选出的有效链接，进行内容抓取和深度分析
-
-**请求参数**:
-```json
-{
-  "max_links": 10,  // 可选，默认处理10个链接
-  "links": ["https://example.com/news1", "https://example.com/news2"]  // 可选，自定义链接列表
-}
-```
-
-**生成的数据文件**:
-- `content/`: 目录，包含每个链接的抓取内容
-- `content/link_{workflow_id}_{i}.txt`: 每个链接的抓取结果
-- `summaries/summary_{workflow_id}.json`: 处理结果摘要
-
-**示例请求**:
-```bash
-curl -X POST http://localhost:5000/api/step3
-curl -X POST -H "Content-Type: application/json" -d '{"max_links": 5}' http://localhost:5000/api/step3
-```
-
-### 5. 完整工作流 (步骤1+2)
-
-**端点**: `/api/workflow/step1to2`  
-**方法**: POST  
-**功能**: 运行完整工作流，包括抓取主页和分析链接
-
-**生成的数据文件**:
-- 步骤1和步骤2中提到的所有文件
-
-**示例请求**:
-```bash
-curl -X POST http://localhost:5000/api/workflow/step1to2
-```
-
-### 6. 扩展工作流 (步骤1+2+3)
-
-**端点**: `/api/workflow/all`  
-**方法**: POST  
-**功能**: 运行完整扩展工作流，包括抓取主页、分析链接和处理有效链接
-
-**生成的数据文件**:
-- 步骤1、步骤2和步骤3中提到的所有文件
-
-**示例请求**:
-```bash
-curl -X POST http://localhost:5000/api/workflow/all
-```
-
-### 7. 查询工作流状态
-
-**端点**: `/api/workflow/{workflow_id}`  
-**方法**: GET  
-**功能**: 获取指定工作流的状态和历史
-
-**生成的数据文件**: 无（只读取现有数据）
-
-**示例请求**:
-```bash
-curl http://localhost:5000/api/workflow/workflow_20250414153034
-```
-
-### 8. 查询所有工作流
-
-**端点**: `/api/workflows`  
-**方法**: GET  
-**功能**: 获取所有工作流的状态，可选根据状态筛选
-
-**查询参数**:
-- `status`: 可选，根据状态筛选，如 `COMPLETED`
-
-**生成的数据文件**: 无（只读取现有数据）
-
-**示例请求**:
-```bash
-curl http://localhost:5000/api/workflows
-curl http://localhost:5000/api/workflows?status=COMPLETED
-```
-
-### 9. 获取链接状态
-
-**端点**: `/api/link/{link_id}`  
-**方法**: GET  
-**功能**: 获取特定链接的分析状态和结果
-
-**生成的数据文件**: 无（只读取现有数据）
-
-**示例请求**:
-```bash
-curl http://localhost:5000/api/link/batch_20250414153034_1
-```
-
-### 10. 重新分析失败的链接
-
-**端点**: `/api/reanalyze`  
-**方法**: POST  
-**功能**: 重新分析之前分析失败的链接
-
-**生成的数据文件**:
-- 更新 `valid_links.json` 或 `invalid_links.json`
-- 生成新的 `analysis_results_workflow_reanalyze_{timestamp}.json`
-
-**示例请求**:
-```bash
-curl -X POST http://localhost:5000/api/reanalyze
-```
-
-## 数据文件详解
-
-系统采用按功能划分的目录结构存储数据：
+## 目录结构
 
 ```
-├── scrape_link_cache.json      # 所有历史抓取链接的缓存
-├── scrape_new_links.json       # 按时间戳组织的新发现链接
-├── archives/                   # 归档的历史数据
-│
-├── valid_links.json           # 被判定为有效的链接及分析理由
-├── invalid_links.json         # 被判定为无效的链接及分析理由
-├── analysis_results/          # 分析结果文件夹
-│   └── analysis_{workflow_id}.json  # 各工作流分析结果
-│
-├── content/                   # 抓取的内容 
-│   └── link_{workflow_id}_{i}.txt   # 单个链接抓取结果
-└── summaries/                 # 分析摘要
-    └── summary_{workflow_id}.json   # 工作流结果摘要
+/
+├── app.py                      # 主应用文件和REST API
+├── step_1_homepage_scrape.py   # 步骤1实现 - 主页抓取
+├── step2_link_test.py          # 步骤2实现 - 链接分析
+├── step_3_scrape_test_sdk.py   # 步骤3实现 - 内容抓取和处理
+├── db_utils.py                 # 数据库操作工具
+├── pg_connection.py            # PostgreSQL连接管理
+├── config.py                   # 配置和环境变量加载
+├── process_valid_links_to_mysql.py # 处理有效链接的独立脚本
+├── create_postgresql_tables.py # PostgreSQL表创建脚本 
+├── create_mysql_tables.py      # MySQL表创建脚本
+├── import_homepage_excel.py    # 从Excel导入主页URL
+├── .env                        # 环境变量
+├── requirements.txt            # 依赖包
+├── logs/                       # 日志目录
+├── data/                       # 数据目录
+└── archives/                   # 存档文件
 ```
 
-这种结构使各步骤的数据明确分离，便于管理和后续扩展。各文件的具体功能：
+## 数据库连接特性
 
-1. **步骤1 (主页抓取)**:
-   - `scrape_link_cache.json`: 所有历史抓取链接的缓存
-   - `scrape_new_links.json`: 按时间戳组织的新发现链接
-   - `archives/`: 旧链接数据归档目录，包含按日期命名的归档文件
+系统实现了强大的数据库连接管理机制：
 
-2. **步骤2 (链接分析)**:
-   - `valid_links.json`: 被判定为有效的链接及分析理由
-   - `invalid_links.json`: 被判定为无效的链接及分析理由
-   - `analysis_results/analysis_{workflow_id}.json`: 每个工作流的完整分析结果
+1. **连接池**: 使用连接池管理数据库连接，提高性能
+2. **自动重试**: 连接失败时自动重试，最多重试3次
+3. **错误恢复**: 包含完整的错误处理和日志记录
+4. **事务管理**: 自动处理事务提交和回滚
+5. **资源释放**: 确保所有连接都被正确关闭
 
-3. **步骤3 (深度内容抓取)**:
-   - `content/link_{workflow_id}_{i}.txt`: 每个链接的内容抓取结果
-   - `summaries/summary_{workflow_id}.json`: 步骤3处理结果摘要，包含成功/失败统计
+### PostgreSQL连接管理 (pg_connection.py)
+提供稳定的PostgreSQL连接上下文管理器，自动处理连接获取、事务管理和连接释放。
 
+### MySQL连接管理 (db_utils.py中的mysql_connection类)
+提供可靠的MySQL连接上下文管理器，支持自动重试和错误恢复。
+
+## 最近更新
+
+- **数据库连接改进**: 增强了PostgreSQL和MySQL连接的稳定性和错误恢复能力
+- **Step3处理优化**: 使用实际API调用替代模拟数据，改进了内容保存到MySQL的流程
+- **表结构规范化**: 确保所有数据库操作使用正确的表名(news_content.step3_content)
+- **错误处理增强**: 在整个流程中添加了更详细的错误日志和重试机制
+- **配置和环境变量**: 统一管理配置和环境变量，确保安全性
+
+## 注意事项
+
+- 系统依赖外部API，请确保API密钥有效且有足够的调用额度
+- 步骤1(主页抓取)包含15秒等待时间，以避免API请求过于频繁
+- 定期检查日志文件，特别是db_utils相关日志，确保数据库连接正常
+- 所有关键数据存储在数据库中，不依赖本地文件
+- PostgreSQL和MySQL服务器必须可访问且正常运行
+
+## 许可
+
+[指定许可证信息] 
