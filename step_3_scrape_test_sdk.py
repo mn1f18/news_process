@@ -170,6 +170,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
     # 更新处理状态
     db_utils.update_workflow_status(link_id, "PROCESSING", details={"url": url})
     
+    # 第一次尝试
     try:
         # 实际的API调用
         response = Application.call(
@@ -248,6 +249,36 @@ def sdk_call(url, link_id=None, workflow_id=None):
             for field, default_value in default_fields.items():
                 if field not in result_data:
                     result_data[field] = default_value
+            
+            # 检查title和content是否为空，如果为空则重试一次
+            if not result_data.get('title') or not result_data.get('content'):
+                logger.warning("标题或内容为空，尝试重试一次...")
+                time.sleep(2)  # 等待2秒后重试
+                
+                # 重试调用API
+                response = Application.call(
+                    api_key=config.DASHSCOPE_API_KEY,
+                    app_id=config.BAILIAN_APP_ID,
+                    prompt=url
+                )
+                response_code = response.status_code
+                response_text = response.output.text if response_code == HTTPStatus.OK else response.message
+                
+                if response_code == HTTPStatus.OK:
+                    # 清理控制字符
+                    cleaned_text = clean_control_characters(response_text)
+                    # 解析JSON
+                    retry_data = json.loads(cleaned_text)
+                    
+                    # 更新结果数据
+                    if retry_data.get('title'):
+                        result_data['title'] = retry_data['title']
+                    if retry_data.get('content'):
+                        result_data['content'] = retry_data['content']
+                    
+                    logger.info("重试成功，获取到新的标题和内容")
+                else:
+                    logger.error(f"重试失败: {response.message}")
             
             # 添加元数据
             result_data["url"] = url
@@ -357,12 +388,19 @@ def save_to_db(link_id, data, success):
         
         # 处理发布日期
         publish_time = data.get('publish_time', '')
-        # 如果为空，直接设置为当前日期，避免插入数据库时出错
-        if not publish_time:
+        # 验证日期格式
+        try:
+            if not publish_time:
+                # 如果为空，设置为当前日期
+                publish_time = datetime.now().strftime('%Y-%m-%d')
+            else:
+                # 尝试解析日期
+                parsed_date = datetime.strptime(publish_time[:10], '%Y-%m-%d')
+                publish_time = parsed_date.strftime('%Y-%m-%d')
+        except ValueError:
+            # 如果日期格式不正确，使用当前日期
+            logger.warning(f"日期格式不正确: {publish_time}，使用当前日期")
             publish_time = datetime.now().strftime('%Y-%m-%d')
-        # 如果长度超过10，只取前10个字符（年-月-日）
-        elif len(publish_time) > 10:
-            publish_time = publish_time[:10]
         
         # 构建内容对象
         content_obj = {
