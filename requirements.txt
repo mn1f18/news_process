@@ -8,4 +8,11 @@ requests>=2.26.0
 uuid>=1.30
 psycopg2-binary>=2.9.1
 mysql-connector-python>=8.0.26
-# GUI程序不需要额外依赖，tkinter是Python标准库的一部分 
+python-dateutil>=2.8.2
+urllib3>=1.26.7
+# GUI程序不需要额外依赖，tkinter是Python标准库的一部分
+# 以下包是Python标准库，不需要额外安装：
+# - logging
+# - json
+# - re
+# - traceback 
