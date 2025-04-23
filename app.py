@@ -8,6 +8,12 @@ import uuid
 from flask import Flask, request, jsonify
 import threading
 import queue
+import atexit
+
+# 添加APScheduler库导入
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.jobstores.memory import MemoryJobStore
 
 # 导入我们的组件
 from step_1_homepage_scrape import HomepageScraper
@@ -22,6 +28,10 @@ from logger_config import app_logger as logger
 app = Flask(__name__)
 # 设置JSON编码，不转义中文字符
 app.config['JSON_AS_ASCII'] = False
+
+# 创建调度器
+scheduler = BackgroundScheduler(jobstores={'default': MemoryJobStore()})
+scheduler.start()
 
 # 确保数据目录存在
 data_dir = "data"
@@ -677,11 +687,8 @@ def task_worker():
                     task.get('max_links', 50)
                 )
             elif task['type'] == 'extended_workflow':
+                # 直接执行工作流，不再处理定时任务逻辑
                 workflow_manager.run_complete_extended_workflow()
-                # 如果设置了定时运行间隔，重新将任务加入队列
-                if task.get('interval_minutes'):
-                    time.sleep(task['interval_minutes'] * 60)  # 转换为秒
-                    task_queue.put(task)  # 重新加入队列
             
             # 标记任务完成
             task_queue.task_done()
@@ -697,6 +704,9 @@ def task_worker():
 # 启动工作线程
 worker_thread = threading.Thread(target=task_worker, daemon=True)
 worker_thread.start()
+
+# 程序退出时关闭调度器
+atexit.register(lambda: scheduler.shutdown())
 
 # 路由: 主页
 @app.route('/')
@@ -837,19 +847,41 @@ def all_workflow():
     interval_minutes = data.get('interval_minutes')
     
     workflow_id = f"workflow_all_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    # 确保不超过50个字符
+    if len(workflow_id) > 50:
+        workflow_id = workflow_id[:50]
     
-    # 将任务添加到队列
+    # 首先执行一次工作流
     task_queue.put({
         'type': 'extended_workflow',
-        'workflow_id': workflow_id,
-        'interval_minutes': interval_minutes
+        'workflow_id': workflow_id
     })
     
+    # 如果设置了定时间隔，使用调度器添加定时任务
     if interval_minutes:
+        # 创建调度任务的唯一ID
+        job_id = f"scheduled_job_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # 如果同名任务已存在，先移除
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
+        
+        # 添加定时任务，使用 IntervalTrigger
+        scheduler.add_job(
+            run_scheduled_workflow,
+            IntervalTrigger(minutes=interval_minutes),
+            id=job_id,
+            kwargs={'workflow_id_prefix': f"scheduled_{workflow_id}"},
+            replace_existing=True
+        )
+        
+        logger.info(f"已添加定时任务 {job_id}，每 {interval_minutes} 分钟执行一次")
+        
         return jsonify({
             'status': 'accepted',
             'workflow_id': workflow_id,
-            'message': f'Extended workflow (step1-2-3) has been queued. Will run every {interval_minutes} minutes.'
+            'job_id': job_id,
+            'message': f'Extended workflow (step1-2-3) has been queued and scheduled to run every {interval_minutes} minutes.'
         })
     else:
         return jsonify({
@@ -906,6 +938,128 @@ def get_link_status(link_id):
         'status': 'error',
         'message': f'Link {link_id} not found'
     }), 404
+
+# 路由: 获取所有定时任务
+@app.route('/api/scheduler/jobs', methods=['GET'])
+def get_scheduler_jobs():
+    try:
+        jobs = []
+        for job in scheduler.get_jobs():
+            next_run = job.next_run_time.strftime('%Y-%m-%d %H:%M:%S') if job.next_run_time else None
+            jobs.append({
+                'id': job.id,
+                'name': job.name,
+                'next_run': next_run,
+                'trigger': str(job.trigger)
+            })
+        
+        return jsonify({
+            'status': 'ok',
+            'count': len(jobs),
+            'jobs': jobs
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error getting scheduler jobs: {str(e)}'
+        }), 500
+
+# 路由: 暂停定时任务
+@app.route('/api/scheduler/pause/<job_id>', methods=['POST'])
+def pause_scheduler_job(job_id):
+    try:
+        job = scheduler.get_job(job_id)
+        if not job:
+            return jsonify({
+                'status': 'error',
+                'message': f'Job {job_id} not found'
+            }), 404
+        
+        scheduler.pause_job(job_id)
+        return jsonify({
+            'status': 'ok',
+            'message': f'Job {job_id} paused'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error pausing job: {str(e)}'
+        }), 500
+
+# 路由: 恢复定时任务
+@app.route('/api/scheduler/resume/<job_id>', methods=['POST'])
+def resume_scheduler_job(job_id):
+    try:
+        job = scheduler.get_job(job_id)
+        if not job:
+            return jsonify({
+                'status': 'error',
+                'message': f'Job {job_id} not found'
+            }), 404
+        
+        scheduler.resume_job(job_id)
+        return jsonify({
+            'status': 'ok',
+            'message': f'Job {job_id} resumed'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error resuming job: {str(e)}'
+        }), 500
+
+# 路由: 删除定时任务
+@app.route('/api/scheduler/remove/<job_id>', methods=['POST'])
+def remove_scheduler_job(job_id):
+    try:
+        job = scheduler.get_job(job_id)
+        if not job:
+            return jsonify({
+                'status': 'error',
+                'message': f'Job {job_id} not found'
+            }), 404
+        
+        scheduler.remove_job(job_id)
+        return jsonify({
+            'status': 'ok',
+            'message': f'Job {job_id} removed'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error removing job: {str(e)}'
+        }), 500
+
+# 定时执行工作流函数
+def run_scheduled_workflow(workflow_id_prefix=None):
+    """
+    定时执行完整工作流的函数
+    
+    Args:
+        workflow_id_prefix: 工作流ID前缀，用于标识特定的调度任务
+    """
+    # 生成工作流ID
+    if workflow_id_prefix:
+        workflow_id = f"{workflow_id_prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    else:
+        workflow_id = f"scheduled_workflow_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    
+    # 确保不超过50个字符
+    if len(workflow_id) > 50:
+        workflow_id = workflow_id[:50]
+    
+    logger.info(f"开始执行定时工作流: {workflow_id}")
+    
+    try:
+        # 直接执行完整工作流
+        result = workflow_manager.run_complete_extended_workflow()
+        logger.info(f"定时工作流 {workflow_id} 执行完成")
+        return result
+    except Exception as e:
+        error_msg = f"执行定时工作流 {workflow_id} 时出错: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
+        return None
 
 # 命令行入口点 - 直接运行
 if __name__ == '__main__':
@@ -976,7 +1130,16 @@ if __name__ == '__main__':
                 logger.info(f"步骤3失败分析: {sum(1 for r in results['step3_results'] if not r['success'])}")
             else:
                 logger.info(f"扩展工作流 {workflow_id} 未返回结果")
+        elif sys.argv[1] == 'scheduler-status':
+            # 打印调度器状态
+            jobs = scheduler.get_jobs()
+            logger.info(f"当前有 {len(jobs)} 个调度任务")
+            for job in jobs:
+                next_run = job.next_run_time.strftime('%Y-%m-%d %H:%M:%S') if job.next_run_time else "未调度"
+                logger.info(f"任务ID: {job.id}, 下次运行时间: {next_run}")
     else:
         # 启动API服务器
         logger.info("启动API服务器...")
+        logger.info("启动调度器...")
+        # 调度器已在应用程序启动时初始化
         app.run(host='0.0.0.0', port=5000, debug=True) 

@@ -21,6 +21,7 @@
 - **步骤3 (Content Processing)**: 处理有效链接的内容，使用SDK进行内容抓取和解析
 - **工作流管理**: 协调各步骤间的数据流转，提供状态跟踪
 - **REST API**: 提供HTTP接口访问各功能，支持异步任务处理
+- **调度系统**: 使用APScheduler库实现可靠的定时任务调度，支持精确的时间间隔执行
 
 ### 技术栈
 
@@ -28,6 +29,7 @@
 - **数据库**: 
   - PostgreSQL: 存储链接分析和工作流数据
   - MySQL: 存储内容结果和网站配置
+- **任务调度**: APScheduler 3.9+
 - **外部API**:
   - DashScope: 用于AI内容分析
   - FireCrawl: 用于网页抓取
@@ -109,10 +111,14 @@ python app.py
 | `/api/workflows` | GET | 获取所有工作流状态 |
 | `/api/link/<link_id>` | GET | 获取链接状态 |
 | `/api/reanalyze` | POST | 重新分析失败的链接 |
+| `/api/scheduler/jobs` | GET | 获取所有调度任务 |
+| `/api/scheduler/pause/<job_id>` | POST | 暂停指定的调度任务 |
+| `/api/scheduler/resume/<job_id>` | POST | 恢复指定的调度任务 |
+| `/api/scheduler/remove/<job_id>` | POST | 删除指定的调度任务 |
 
 ### 定时运行
 
-系统支持定时运行功能，可以通过API设置运行间隔：
+系统支持基于APScheduler的可靠定时任务功能，可以通过API设置运行间隔：
 
 ```bash
 # 每60分钟运行一次完整工作流
@@ -121,6 +127,31 @@ curl -X POST http://localhost:5000/api/workflow/all -H "Content-Type: applicatio
 # 只运行一次完整工作流
 curl -X POST http://localhost:5000/api/workflow/all
 ```
+
+#### 定时任务管理
+
+系统提供了完整的定时任务管理API：
+
+```bash
+# 查看所有定时任务
+curl -X GET http://localhost:5000/api/scheduler/jobs
+
+# 暂停指定任务
+curl -X POST http://localhost:5000/api/scheduler/pause/<job_id>
+
+# 恢复指定任务
+curl -X POST http://localhost:5000/api/scheduler/resume/<job_id>
+
+# 删除指定任务
+curl -X POST http://localhost:5000/api/scheduler/remove/<job_id>
+```
+
+#### 定时任务特性
+
+- **精确调度**: 基于APScheduler的调度系统确保任务按照指定的时间间隔准确执行
+- **任务排队**: 如果当前任务运行时间超过调度间隔，系统会等待当前任务完成后再执行下一个任务
+- **错误恢复**: 即使任务执行失败，调度系统仍会在下一个时间点尝试再次执行
+- **持久化**: 调度信息存储在内存中，服务重启后需要重新设置
 
 ### 日志系统
 
@@ -299,6 +330,8 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 
 ## 最近更新
 
+- **添加APScheduler调度系统**: 实现了基于APScheduler的可靠定时任务系统，支持精确时间间隔执行
+- **定时任务管理API**: 新增API接口用于查看、暂停、恢复和删除定时任务
 - **添加影响因素字段**: 添加impact_factors字段，用于存储1-3个最相关的影响因素
 - **日志系统优化**: 添加日志轮转和模块化日志记录
 - **定时运行功能**: 支持通过API设置工作流运行间隔
@@ -315,6 +348,7 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 - 定期检查日志文件，特别是db_utils相关日志，确保数据库连接正常
 - 所有关键数据存储在数据库中，不依赖本地文件
 - PostgreSQL和MySQL服务器必须可访问且正常运行
+- 如果定时任务运行时间超过设定间隔，系统会等待当前任务完成后再执行下一次任务
 
 ## 许可
 
