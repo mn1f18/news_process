@@ -110,23 +110,34 @@ python app.py
 | `/api/link/<link_id>` | GET | 获取链接状态 |
 | `/api/reanalyze` | POST | 重新分析失败的链接 |
 
-### 命令行使用
+### 定时运行
+
+系统支持定时运行功能，可以通过API设置运行间隔：
 
 ```bash
-# 运行完整工作流 (步骤1+2)
-python app.py run-workflow
+# 每60分钟运行一次完整工作流
+curl -X POST http://localhost:5000/api/workflow/all -H "Content-Type: application/json" -d '{"interval_minutes": 60}'
 
-# 分析最新抓取的链接 (最多50个)
-python app.py analyze-latest 50
-
-# 处理有效链接 (最多10个)
-python app.py process-valid 10
-
-# 运行完整扩展工作流 (步骤1+2+3)
-python app.py extended-workflow
+# 只运行一次完整工作流
+curl -X POST http://localhost:5000/api/workflow/all
 ```
 
-## 数据库结构
+### 日志系统
+
+系统使用分模块的日志记录：
+
+- `step1_*.log`: 主页抓取日志
+- `step2_*.log`: 链接分析日志
+- `step3_*.log`: 内容处理日志
+- `app_*.log`: API服务日志
+
+日志特点：
+- 按日期自动轮转
+- 只保留当天日志
+- 支持UTF-8编码
+- 同时输出到文件和控制台
+
+### 数据库结构
 
 系统使用两个数据库来存储不同类型的数据：
 1. PostgreSQL 用于存储工作流状态和链接分析数据
@@ -221,6 +232,7 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
       event_tags JSON,
       space_tags JSON,
       cat_tags JSON,
+      impact_factors JSON,
       publish_time DATE,
       importance VARCHAR(20),
       state JSON,
@@ -257,6 +269,7 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 ├── db_utils.py                 # 数据库操作工具
 ├── pg_connection.py            # PostgreSQL连接管理
 ├── config.py                   # 配置和环境变量加载
+├── logger_config.py            # 日志配置模块
 ├── process_valid_links_to_mysql.py # 处理有效链接的独立脚本
 ├── create_postgresql_tables.py # PostgreSQL表创建脚本 
 ├── create_mysql_tables.py      # MySQL表创建脚本
@@ -286,6 +299,9 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 
 ## 最近更新
 
+- **添加影响因素字段**: 添加impact_factors字段，用于存储1-3个最相关的影响因素
+- **日志系统优化**: 添加日志轮转和模块化日志记录
+- **定时运行功能**: 支持通过API设置工作流运行间隔
 - **数据库连接改进**: 增强了PostgreSQL和MySQL连接的稳定性和错误恢复能力
 - **Step3处理优化**: 使用实际API调用替代模拟数据，改进了内容保存到MySQL的流程
 - **表结构规范化**: 确保所有数据库操作使用正确的表名(news_content.step3_content)
@@ -295,7 +311,7 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 ## 注意事项
 
 - 系统依赖外部API，请确保API密钥有效且有足够的调用额度
-- 步骤1(主页抓取)包含15秒等待时间，以避免API请求过于频繁
+- 步骤1(主页抓取)包含2秒等待时间，以避免API请求过于频繁
 - 定期检查日志文件，特别是db_utils相关日志，确保数据库连接正常
 - 所有关键数据存储在数据库中，不依赖本地文件
 - PostgreSQL和MySQL服务器必须可访问且正常运行

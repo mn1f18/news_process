@@ -14,23 +14,7 @@ import uuid
 from urllib.parse import urlparse
 import mysql.connector
 from mysql.connector import pooling
-
-# 配置日志系统
-log_dir = "logs"
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
-log_file = os.path.join(log_dir, f"sdk_{datetime.now().strftime('%Y%m%d')}.log")
-
-# 配置日志格式
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler()  # 同时输出到控制台
-    ]
-)
-logger = logging.getLogger("SDK")
+from logger_config import step3_logger as logger
 
 # 检查环境变量是否正确设置
 if not config.check_env_vars():
@@ -198,6 +182,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 "event_tags": [],
                 "space_tags": [],
                 "cat_tags": [],
+                "impact_factors": [],
                 "publish_time": "",
                 "importance": "低",
                 "state": ["爬取失败"],
@@ -240,6 +225,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 "event_tags": [],
                 "space_tags": [],
                 "cat_tags": [],
+                "impact_factors": [],
                 "publish_time": "",
                 "importance": "低",
                 "state": ["爬取成功"]
@@ -267,18 +253,55 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 if response_code == HTTPStatus.OK:
                     # 清理控制字符
                     cleaned_text = clean_control_characters(response_text)
-                    # 解析JSON
-                    retry_data = json.loads(cleaned_text)
                     
-                    # 更新结果数据
-                    if retry_data.get('title'):
-                        result_data['title'] = retry_data['title']
-                    if retry_data.get('content'):
-                        result_data['content'] = retry_data['content']
-                    
-                    logger.info("重试成功，获取到新的标题和内容")
+                    try:
+                        # 解析JSON
+                        retry_data = json.loads(cleaned_text)
+                        logger.info(f"重试成功，获取到完整的新数据")
+                        
+                        # 记录原始数据
+                        logger.info(f"原始标题: [{result_data.get('title', '')}]")
+                        logger.info(f"原始内容长度: {len(result_data.get('content', ''))}")
+                        
+                        # 使用重试返回的所有数据字段替换原数据
+                        # 首先保存一些元数据，不该被覆盖的信息
+                        preserved_fields = {
+                            'url': result_data.get('url'),
+                            'link_id': result_data.get('link_id'),
+                            'workflow_id': result_data.get('workflow_id'),
+                            'homepage_url': result_data.get('homepage_url'),
+                            'source_note': result_data.get('source_note'),
+                            'process_time': result_data.get('process_time')
+                        }
+                        
+                        # 用重试数据完全替换原数据
+                        result_data = retry_data
+                        
+                        # 确保所有必要字段存在
+                        for field, default_value in default_fields.items():
+                            if field not in result_data:
+                                result_data[field] = default_value
+                        
+                        # 恢复原来的元数据
+                        for field, value in preserved_fields.items():
+                            if value:
+                                result_data[field] = value
+                        
+                        # 记录更新后的数据
+                        logger.info(f"更新后标题: [{result_data.get('title', '')}]")
+                        logger.info(f"更新后内容长度: {len(result_data.get('content', ''))}")
+                        logger.info(f"更新后事件标签: {result_data.get('event_tags', [])}")
+                        logger.info(f"更新后国家标签: {result_data.get('space_tags', [])}")
+                        logger.info(f"更新后品类标签: {result_data.get('cat_tags', [])}")
+                        logger.info(f"更新后影响因素: {result_data.get('impact_factors', [])}")
+                    except json.JSONDecodeError as e:
+                        logger.error(f"重试JSON解析失败: {str(e)}")
+                        logger.error(f"重试原始文本: {cleaned_text[:100]}...")
                 else:
                     logger.error(f"重试失败: {response.message}")
+            
+            # 记录impact_factors字段
+            logger.info(f"影响因素: {result_data.get('impact_factors', [])}")
             
             # 添加元数据
             result_data["url"] = url
@@ -324,6 +347,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 "event_tags": [],
                 "space_tags": [],
                 "cat_tags": [],
+                "impact_factors": [],
                 "publish_time": "",
                 "importance": "低",
                 "state": ["爬取失败-JSON解析错误"],
@@ -356,6 +380,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
             "event_tags": [],
             "space_tags": [],
             "cat_tags": [],
+            "impact_factors": [],
             "publish_time": "",
             "importance": "低",
             "state": ["爬取失败-系统错误"],
@@ -409,6 +434,7 @@ def save_to_db(link_id, data, success):
             'event_tags': data.get('event_tags', []),
             'space_tags': data.get('space_tags', []),
             'cat_tags': data.get('cat_tags', []),
+            'impact_factors': data.get('impact_factors', []),
             'publish_time': publish_time,
             'importance': data.get('importance', '低'),
             'state': state

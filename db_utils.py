@@ -7,12 +7,13 @@ import logging
 import mysql.connector
 from mysql.connector import pooling
 from psycopg2 import pool
-from config import PG_CONFIG, MYSQL_CONFIG, get_logger
+from config import PG_CONFIG, MYSQL_CONFIG
 from datetime import datetime
 import time
+from logger_config import setup_logger
 
 # 初始化日志记录器
-logger = get_logger("db_utils", "db_utils.log")
+logger = setup_logger("db_utils")
 
 # 全局连接池
 PG_POOL = None
@@ -794,6 +795,7 @@ def save_content(workflow_id, content_type, content, metadata=None):
         event_tags = "[]"
         space_tags = "[]"
         cat_tags = "[]"
+        impact_factors = "[]"  # 添加impact_factors字段默认值
         publish_time = None
         importance = "低"
         state = "[]"
@@ -846,6 +848,8 @@ def save_content(workflow_id, content_type, content, metadata=None):
                     space_tags = json.dumps(content_obj['space_tags'])
                 if 'cat_tags' in content_obj:
                     cat_tags = json.dumps(content_obj['cat_tags'])
+                if 'impact_factors' in content_obj:  # 添加对impact_factors的处理
+                    impact_factors = json.dumps(content_obj['impact_factors'])
                     
                 # 处理publish_time - 修复空字符串问题
                 publish_time = content_obj.get('publish_time')
@@ -876,15 +880,16 @@ def save_content(workflow_id, content_type, content, metadata=None):
                 # 直接插入到news_content.step3_content表
                 cursor.execute(
                         """INSERT INTO news_content.step3_content 
-                        (link_id, title, content, event_tags, space_tags, cat_tags, 
+                        (link_id, title, content, event_tags, space_tags, cat_tags, impact_factors,
                         publish_time, importance, state, source_note, homepage_url, workflow_id) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
                         title = %s,
                         content = %s,
                         event_tags = %s,
                         space_tags = %s,
                         cat_tags = %s,
+                        impact_factors = %s,
                         publish_time = %s,
                         importance = %s,
                         state = %s,
@@ -892,9 +897,9 @@ def save_content(workflow_id, content_type, content, metadata=None):
                         homepage_url = %s,
                         workflow_id = %s""",
                         (
-                            link_id, title, article_content, event_tags, space_tags, cat_tags,
+                            link_id, title, article_content, event_tags, space_tags, cat_tags, impact_factors,
                             publish_time, importance, state, source_note, homepage_url, workflow_id,
-                            title, article_content, event_tags, space_tags, cat_tags,
+                            title, article_content, event_tags, space_tags, cat_tags, impact_factors,
                             publish_time, importance, state, source_note, homepage_url, workflow_id
                         )
                 )
@@ -929,7 +934,7 @@ def get_content(content_id=None, workflow_id=None, content_type=None):
         with mysql_connection() as cursor:
             if content_id:
                 cursor.execute(
-                    """SELECT id, link_id, title, content, event_tags, space_tags, cat_tags,
+                    """SELECT id, link_id, title, content, event_tags, space_tags, cat_tags, impact_factors,
                     publish_time, importance, state, source_note, homepage_url, workflow_id, created_at
                     FROM news_content.step3_content 
                     WHERE id = %s""",
@@ -937,7 +942,7 @@ def get_content(content_id=None, workflow_id=None, content_type=None):
                 )
             elif workflow_id:
                 cursor.execute(
-                    """SELECT id, link_id, title, content, event_tags, space_tags, cat_tags,
+                    """SELECT id, link_id, title, content, event_tags, space_tags, cat_tags, impact_factors,
                     publish_time, importance, state, source_note, homepage_url, workflow_id, created_at 
                     FROM news_content.step3_content 
                     WHERE workflow_id = %s
@@ -977,6 +982,12 @@ def get_content(content_id=None, workflow_id=None, content_type=None):
                     result['cat_tags'] = []
                     
                 try:
+                    if result['impact_factors']:  # 添加对impact_factors的解析
+                        result['impact_factors'] = json.loads(result['impact_factors'])
+                except json.JSONDecodeError:
+                    result['impact_factors'] = []
+                    
+                try:
                     if result['state']:
                         result['state'] = json.loads(result['state'])
                 except json.JSONDecodeError:
@@ -1006,6 +1017,12 @@ def get_content(content_id=None, workflow_id=None, content_type=None):
                     except json.JSONDecodeError:
                         result['cat_tags'] = []
                 
+                    try:
+                        if result['impact_factors']:  # 添加对impact_factors的解析
+                            result['impact_factors'] = json.loads(result['impact_factors'])
+                    except json.JSONDecodeError:
+                        result['impact_factors'] = []
+                    
                     try:
                         if result['state']:
                             result['state'] = json.loads(result['state'])
