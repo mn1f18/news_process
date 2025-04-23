@@ -70,13 +70,29 @@ class HomepageScraper:
             # 记录总链接数
             total_links = 0
             
+            # 用于去重的集合
+            all_links = set()
+            
             # 为每个homepage_url保存新链接
             for homepage_url in new_links_data:
+                # 获取新链接列表
+                new_links = new_links_data[homepage_url].get('new_links', [])
+                
+                # 去重：只保留不在all_links中的链接
+                unique_links = [link for link in new_links if link not in all_links]
+                
+                # 更新all_links集合
+                all_links.update(unique_links)
+                
+                # 更新new_links_data中的链接列表
+                new_links_data[homepage_url]['new_links'] = unique_links
+                
                 # 为数据添加batch_id
                 new_links_data[homepage_url]['batch_id'] = batch_id
+                
                 # 保存到数据库
                 db_utils.save_new_links(homepage_url, new_links_data[homepage_url])
-                total_links += len(new_links_data[homepage_url].get('new_links', []))
+                total_links += len(unique_links)
                 
             logger.info(f"已保存 {total_links} 个新链接到数据库，批次ID: {batch_id}")
             return batch_id
@@ -124,8 +140,8 @@ class HomepageScraper:
         while retry_count <= max_retries:
             try:
                 if retry_count > 0:
-                    # 固定15秒等待时间
-                    wait_time = 15
+                    # 固定5秒等待时间
+                    wait_time = 5
                     logger.info(f"第 {retry_count} 次重试，等待 {wait_time} 秒...")
                     time.sleep(wait_time)
                 
@@ -181,8 +197,8 @@ class HomepageScraper:
                             logger.info(f"达到速率限制，等待 {wait_seconds} 秒后重试...")
                             time.sleep(wait_seconds)
                         except:
-                            # 固定15秒等待时间
-                            wait_time = 15
+                            # 固定5秒等待时间
+                            wait_time = 2
                             logger.info(f"达到速率限制，等待 {wait_time} 秒后重试...")
                             time.sleep(wait_time)
                     else:
@@ -192,8 +208,8 @@ class HomepageScraper:
                     # 对于非速率限制错误，尝试一次重试
                     if "timeout" in str(e).lower() and retry_count < max_retries:
                         retry_count += 1
-                        # 固定15秒等待时间
-                        wait_time = 15
+                        # 固定5秒等待时间
+                        wait_time = 5
                         logger.info(f"请求超时，等待 {wait_time} 秒后重试...")
                         time.sleep(wait_time)
                     else:
@@ -270,7 +286,7 @@ class HomepageScraper:
                 
                 # 每次检查后暂停一段时间，避免请求过于频繁
                 if processed_urls < total_urls:  # 最后一个URL不需要等待
-                    wait_time = 15
+                    wait_time = 2
                     logger.info(f"等待 {wait_time} 秒后继续下一个URL...")
                     time.sleep(wait_time)
                 

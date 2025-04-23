@@ -693,6 +693,10 @@ def task_worker():
                 )
             elif task['type'] == 'extended_workflow':
                 workflow_manager.run_complete_extended_workflow()
+                # 如果设置了定时运行间隔，重新将任务加入队列
+                if task.get('interval_minutes'):
+                    time.sleep(task['interval_minutes'] * 60)  # 转换为秒
+                    task_queue.put(task)  # 重新加入队列
             
             # 标记任务完成
             task_queue.task_done()
@@ -838,19 +842,36 @@ def step1to2_workflow():
 # 路由: 完整工作流（步骤1+2+3）
 @app.route('/api/workflow/all', methods=['POST'])
 def all_workflow():
+    # 允许空的请求体或非JSON请求
+    try:
+        data = request.json or {}
+    except:
+        data = {}
+    
+    # 获取定时运行间隔（分钟）
+    interval_minutes = data.get('interval_minutes')
+    
     workflow_id = f"workflow_all_{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
     # 将任务添加到队列
     task_queue.put({
         'type': 'extended_workflow',
-        'workflow_id': workflow_id
+        'workflow_id': workflow_id,
+        'interval_minutes': interval_minutes
     })
     
-    return jsonify({
-        'status': 'accepted',
-        'workflow_id': workflow_id,
-        'message': 'Extended workflow (step1-2-3) has been queued. Step 2 will only analyze the latest links, not all links.'
-    })
+    if interval_minutes:
+        return jsonify({
+            'status': 'accepted',
+            'workflow_id': workflow_id,
+            'message': f'Extended workflow (step1-2-3) has been queued. Will run every {interval_minutes} minutes.'
+        })
+    else:
+        return jsonify({
+            'status': 'accepted',
+            'workflow_id': workflow_id,
+            'message': 'Extended workflow (step1-2-3) has been queued. Step 2 will only analyze the latest links, not all links.'
+        })
 
 # 路由: 获取工作流状态
 @app.route('/api/workflow/<workflow_id>', methods=['GET'])
