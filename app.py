@@ -15,24 +15,8 @@ from step2_link_test import LinkAnalyzer
 from step_3_scrape_test_sdk import sdk_call
 import db_utils
 from db_utils import pg_connection
-from config import get_logger
-
-# 配置日志系统
-log_dir = "logs"
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
-log_file = os.path.join(log_dir, f"app_{datetime.now().strftime('%Y%m%d')}.log")
-
-# 配置日志格式
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler()  # 同时输出到控制台
-    ]
-)
-logger = logging.getLogger("NewsApp")
+import config
+from logger_config import app_logger as logger
 
 # 创建Flask应用
 app = Flask(__name__)
@@ -45,6 +29,7 @@ if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
 # 确保日志目录存在
+log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 

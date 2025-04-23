@@ -8,23 +8,7 @@ import logging
 import traceback
 import mysql.connector
 import db_utils
-
-# 配置日志系统
-log_dir = "logs"
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
-log_file = os.path.join(log_dir, f"homepage_scrape_{datetime.now().strftime('%Y%m%d')}.log")
-
-# 配置日志格式
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler()  # 同时输出到控制台
-    ]
-)
-logger = logging.getLogger("HomepageScrape")
+from logger_config import step1_logger as logger
 
 # 确保环境变量正确设置
 if not config.check_env_vars():

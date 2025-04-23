@@ -8,28 +8,17 @@ import logging
 from datetime import datetime
 import uuid
 import db_utils
+from logger_config import step2_logger as logger
+
+# 确保环境变量正确设置
+if not config.check_env_vars():
+    logger.error("环境变量配置错误，请检查.env文件")
+    exit(1)
 
 # 配置日志系统
 log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
-log_file = os.path.join(log_dir, f"link_analyzer_{datetime.now().strftime('%Y%m%d')}.log")
-
-# 配置日志格式
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler()  # 同时输出到控制台
-    ]
-)
-logger = logging.getLogger("LinkAnalyzer")
-
-# 检查环境变量是否正确设置
-if not config.check_env_vars():
-    logger.error("环境变量配置错误，请检查.env文件")
-    exit(1)
 
 class LinkAnalyzer:
     """链接分析器，判断链接是否需要爬取"""
