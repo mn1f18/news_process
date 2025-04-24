@@ -189,7 +189,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 "url": url,
                 "link_id": link_id,
                 "workflow_id": workflow_id,
-                "homepage_url": homepage_url,
+                "homepage_url": url,
                 "source_note": source_note,
                 "error": error_message,
                 "process_time": f"{elapsed_time:.2f}秒"
@@ -307,7 +307,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
             result_data["url"] = url
             result_data["link_id"] = link_id
             result_data["workflow_id"] = workflow_id
-            result_data["homepage_url"] = homepage_url
+            result_data["homepage_url"] = url
             result_data["source_note"] = source_note
             result_data["process_time"] = f"{elapsed_time:.2f}秒"
             
@@ -354,7 +354,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 "url": url,
                 "link_id": link_id,
                 "workflow_id": workflow_id,
-                "homepage_url": homepage_url,
+                "homepage_url": url,
                 "source_note": source_note,
                 "error": error_message,
                 "process_time": f"{elapsed_time:.2f}秒"
@@ -387,7 +387,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
             "url": url,
             "link_id": link_id,
             "workflow_id": workflow_id,
-            "homepage_url": homepage_url,
+            "homepage_url": url,
             "source_note": source_note,
             "error": error_message,
             "process_time": f"{elapsed_time:.2f}秒"
@@ -440,12 +440,12 @@ def save_to_db(link_id, data, success):
             'state': state
         }
         
-        # 构建元数据对象
+        # 构建元数据对象 - 确保homepage_url是子链接URL
         metadata = {
             'url': data.get('url', ''),
             'link_id': link_id,
             'source_note': data.get('source_note', ''),
-            'homepage_url': data.get('homepage_url', ''),
+            'homepage_url': data.get('url', ''),  # 这里使用url字段作为homepage_url字段的值
             'process_time': data.get('process_time', ''),
             'success': success
         }

@@ -1,10 +1,42 @@
 import os
 import logging
-from logging.handlers import TimedRotatingFileHandler
+import sys
+from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
 from datetime import datetime
+import time
 
 # 全局日志记录器字典
 _loggers = {}
+
+class SafeRotatingFileHandler(TimedRotatingFileHandler):
+    """
+    自定义的安全日志轮转处理器，避免Windows下文件锁定问题
+    """
+    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, 
+                 delay=False, utc=False, atTime=None):
+        TimedRotatingFileHandler.__init__(self, filename, when, interval, backupCount, 
+                                         encoding, delay, utc, atTime)
+        
+    def doRollover(self):
+        """
+        重写日志轮转方法，增加错误处理和重试机制
+        """
+        try:
+            # 尝试标准的轮转方法
+            super().doRollover()
+        except (FileNotFoundError, PermissionError) as e:
+            # 如果出现权限错误或文件未找到，输出错误但不中断程序
+            sys.stderr.write(f"无法轮转日志文件 {self.baseFilename}: {str(e)}\n")
+            # 创建新的日志文件，不再尝试轮转
+            if self.stream:
+                self.stream.close()
+                self.stream = None
+            
+            # 尝试创建新文件而不轮转
+            try:
+                self.stream = self._open()
+            except Exception as e:
+                sys.stderr.write(f"无法创建新的日志文件: {str(e)}\n")
 
 def setup_logger(name, log_dir="logs"):
     """设置日志记录器
@@ -25,11 +57,16 @@ def setup_logger(name, log_dir="logs"):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     
-    # 创建日志文件路径
-    log_file = os.path.join(log_dir, f"{name}_{datetime.now().strftime('%Y%m%d')}.log")
+    # 如果该日志记录器已有处理器，避免重复添加
+    if logger.handlers:
+        return logger
     
-    # 创建TimedRotatingFileHandler，每天轮转
-    file_handler = TimedRotatingFileHandler(
+    # 创建日志文件路径 - 添加时间戳以避免冲突
+    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    log_file = os.path.join(log_dir, f"{name}_{datetime.now().strftime('%Y%m%d')}_{timestamp}.log")
+    
+    # 使用自定义的安全轮转处理器
+    file_handler = SafeRotatingFileHandler(
         filename=log_file,
         when='midnight',  # 每天午夜轮转
         interval=1,       # 每1天轮转一次
