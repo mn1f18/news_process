@@ -154,190 +154,195 @@ def sdk_call(url, link_id=None, workflow_id=None):
     # 更新处理状态
     db_utils.update_workflow_status(link_id, "PROCESSING", details={"url": url})
     
-    # 第一次尝试
-    try:
-        # 实际的API调用
-        response = Application.call(
-            api_key=config.DASHSCOPE_API_KEY,
-            app_id=config.BAILIAN_APP_ID,
-            prompt=url
-        )
-        response_code = response.status_code
-        response_text = response.output.text if response_code == HTTPStatus.OK else response.message
-        
-        elapsed_time = (datetime.now() - start_time).total_seconds()
-        
-        # 处理失败的情况
-        if response_code != HTTPStatus.OK:
-            error_message = f'请求失败: {response_text}, 耗时: {elapsed_time:.2f}秒'
-            logger.error(error_message)
-            
-            # 更新状态为失败
-            db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
-            
-            # 构造错误响应数据
-            result_data = {
-                "title": "",
-                "content": "",
-                "event_tags": [],
-                "space_tags": [],
-                "cat_tags": [],
-                "impact_factors": [],
-                "publish_time": "",
-                "importance": "低",
-                "state": ["爬取失败"],
-                "url": url,
-                "link_id": link_id,
-                "workflow_id": workflow_id,
-                "homepage_url": url,
-                "source_note": source_note,
-                "error": error_message,
-                "process_time": f"{elapsed_time:.2f}秒"
-            }
-            
-            # 保存到数据库
-            save_to_db(link_id, result_data, False)
-            
-            return json.dumps(result_data, ensure_ascii=False)
-        
-        # 处理成功的情况
+    # 设置最大重试次数和当前重试计数
+    max_retries = 2  # 设置为2次重试
+    retry_count = 0
+    
+    while retry_count <= max_retries:  # 允许初始尝试 + 最多2次重试
         try:
-            # 清理控制字符
-            cleaned_text = clean_control_characters(response_text)
-            logger.info(f"清理后的原始文本前100字符: {cleaned_text[:100]}")
+            # 如果是重试，添加日志并等待
+            if retry_count > 0:
+                wait_time = 10  # 设置为10秒等待时间
+                logger.info(f"第 {retry_count} 次重试，等待 {wait_time} 秒...")
+                time.sleep(wait_time)
+                logger.info(f"开始第 {retry_count} 次重试处理URL: {url}")
             
-            # 解析JSON
-            result_data = json.loads(cleaned_text)
+            # 实际的API调用
+            response = Application.call(
+                api_key=config.DASHSCOPE_API_KEY,
+                app_id=config.BAILIAN_APP_ID,
+                prompt=url
+            )
+            response_code = response.status_code
+            response_text = response.output.text if response_code == HTTPStatus.OK else response.message
             
-            # 详细记录解析后的标题字段
-            title_value = result_data.get('title', '')
-            logger.info(f"解析后的标题字段: [{title_value}]，长度: {len(title_value)}")
-            # 检查标题字段是否包含不可见字符
-            hex_title = ' '.join(hex(ord(c)) for c in title_value[:20]) if title_value else '空'
-            logger.info(f"标题字段前20个字符的十六进制: {hex_title}")
+            elapsed_time = (datetime.now() - start_time).total_seconds()
             
-            logger.info(f"成功解析返回的JSON，标题: {result_data.get('title', '')[:30]}")
-            
-            # 确保所有必要字段存在
-            default_fields = {
-                "title": "",
-                "content": "",
-                "event_tags": [],
-                "space_tags": [],
-                "cat_tags": [],
-                "impact_factors": [],
-                "publish_time": "",
-                "importance": "低",
-                "state": ["爬取成功"]
-            }
-            
-            # 用默认值填充缺失字段
-            for field, default_value in default_fields.items():
-                if field not in result_data:
-                    result_data[field] = default_value
-            
-            # 检查title和content是否为空，如果为空则重试一次
-            if not result_data.get('title') or not result_data.get('content'):
-                logger.warning("标题或内容为空，尝试重试一次...")
-                time.sleep(2)  # 等待2秒后重试
+            # 处理失败的情况
+            if response_code != HTTPStatus.OK:
+                error_message = f'请求失败: {response_text}, 耗时: {elapsed_time:.2f}秒'
+                logger.error(error_message)
                 
-                # 重试调用API
-                response = Application.call(
-                    api_key=config.DASHSCOPE_API_KEY,
-                    app_id=config.BAILIAN_APP_ID,
-                    prompt=url
-                )
-                response_code = response.status_code
-                response_text = response.output.text if response_code == HTTPStatus.OK else response.message
+                # 如果未达到最大重试次数，则继续重试
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
                 
-                if response_code == HTTPStatus.OK:
-                    # 清理控制字符
-                    cleaned_text = clean_control_characters(response_text)
-                    
-                    try:
-                        # 解析JSON
-                        retry_data = json.loads(cleaned_text)
-                        logger.info(f"重试成功，获取到完整的新数据")
-                        
-                        # 记录原始数据
-                        logger.info(f"原始标题: [{result_data.get('title', '')}]")
-                        logger.info(f"原始内容长度: {len(result_data.get('content', ''))}")
-                        
-                        # 使用重试返回的所有数据字段替换原数据
-                        # 首先保存一些元数据，不该被覆盖的信息
-                        preserved_fields = {
-                            'url': result_data.get('url'),
-                            'link_id': result_data.get('link_id'),
-                            'workflow_id': result_data.get('workflow_id'),
-                            'homepage_url': result_data.get('homepage_url'),
-                            'source_note': result_data.get('source_note'),
-                            'process_time': result_data.get('process_time')
-                        }
-                        
-                        # 用重试数据完全替换原数据
-                        result_data = retry_data
-                        
-                        # 确保所有必要字段存在
-                        for field, default_value in default_fields.items():
-                            if field not in result_data:
-                                result_data[field] = default_value
-                        
-                        # 恢复原来的元数据
-                        for field, value in preserved_fields.items():
-                            if value:
-                                result_data[field] = value
-                        
-                        # 记录更新后的数据
-                        logger.info(f"更新后标题: [{result_data.get('title', '')}]")
-                        logger.info(f"更新后内容长度: {len(result_data.get('content', ''))}")
-                        logger.info(f"更新后事件标签: {result_data.get('event_tags', [])}")
-                        logger.info(f"更新后国家标签: {result_data.get('space_tags', [])}")
-                        logger.info(f"更新后品类标签: {result_data.get('cat_tags', [])}")
-                        logger.info(f"更新后影响因素: {result_data.get('impact_factors', [])}")
-                    except json.JSONDecodeError as e:
-                        logger.error(f"重试JSON解析失败: {str(e)}")
-                        logger.error(f"重试原始文本: {cleaned_text[:100]}...")
+                # 达到最大重试次数，更新状态为失败
+                db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
+                
+                # 构造错误响应数据
+                result_data = {
+                    "title": "",
+                    "content": "",
+                    "event_tags": [],
+                    "space_tags": [],
+                    "cat_tags": [],
+                    "impact_factors": [],
+                    "publish_time": "",
+                    "importance": "低",
+                    "state": ["爬取失败"],
+                    "url": url,
+                    "link_id": link_id,
+                    "workflow_id": workflow_id,
+                    "homepage_url": url,
+                    "source_note": source_note,
+                    "error": error_message,
+                    "process_time": f"{elapsed_time:.2f}秒"
+                }
+                
+                # 保存到数据库
+                save_to_db(link_id, result_data, False)
+                
+                return json.dumps(result_data, ensure_ascii=False)
+            
+            # 处理成功的情况
+            try:
+                # 清理控制字符
+                cleaned_text = clean_control_characters(response_text)
+                logger.info(f"清理后的原始文本前100字符: {cleaned_text[:100]}")
+                
+                # 解析JSON
+                result_data = json.loads(cleaned_text)
+                
+                # 详细记录解析后的标题字段
+                title_value = result_data.get('title', '')
+                logger.info(f"解析后的标题字段: [{title_value}]，长度: {len(title_value)}")
+                # 检查标题字段是否包含不可见字符
+                hex_title = ' '.join(hex(ord(c)) for c in title_value[:20]) if title_value else '空'
+                logger.info(f"标题字段前20个字符的十六进制: {hex_title}")
+                
+                logger.info(f"成功解析返回的JSON，标题: {result_data.get('title', '')[:30]}")
+                
+                # 确保所有必要字段存在
+                default_fields = {
+                    "title": "",
+                    "content": "",
+                    "event_tags": [],
+                    "space_tags": [],
+                    "cat_tags": [],
+                    "impact_factors": [],
+                    "publish_time": "",
+                    "importance": "低",
+                    "state": ["爬取成功"]
+                }
+                
+                # 用默认值填充缺失字段
+                for field, default_value in default_fields.items():
+                    if field not in result_data:
+                        result_data[field] = default_value
+                
+                # 检查title和content是否为空，如果为空则重试
+                if not result_data.get('title') or not result_data.get('content'):
+                    logger.warning("标题或内容为空，需要重试")
+                    if retry_count < max_retries:
+                        retry_count += 1
+                        continue
+                    else:
+                        logger.warning(f"已达到最大重试次数 {max_retries}，使用最后一次获取的结果")
+                
+                # 记录impact_factors字段
+                logger.info(f"影响因素: {result_data.get('impact_factors', [])}")
+                
+                # 添加元数据
+                result_data["url"] = url
+                result_data["link_id"] = link_id
+                result_data["workflow_id"] = workflow_id
+                result_data["homepage_url"] = url
+                result_data["source_note"] = source_note
+                result_data["process_time"] = f"{elapsed_time:.2f}秒"
+                
+                # 检查保存前的数据
+                if 'title' in result_data:
+                    logger.info(f"保存到数据库前的标题: [{result_data['title']}]")
                 else:
-                    logger.error(f"重试失败: {response.message}")
+                    logger.info("警告: 结果数据中没有title字段")
+                
+                # 保存到数据库
+                success = save_to_db(link_id, result_data, True)
+                
+                # 更新工作流状态
+                if success:
+                    db_utils.update_workflow_status(link_id, "COMPLETED", 
+                                                 details={
+                                                     "title": result_data.get('title', '')[:100],
+                                                     "url": url,
+                                                     "process_time": f"{elapsed_time:.2f}秒"
+                                                 })
+                else:
+                    db_utils.update_workflow_status(link_id, "FAILED", error="保存到数据库失败")
+                
+                return json.dumps(result_data, ensure_ascii=False)
+                
+            except json.JSONDecodeError as e:
+                error_message = f"JSON解析错误: {str(e)}, 原始文本: {response_text[:100]}..."
+                logger.error(error_message)
+                
+                # 如果未达到最大重试次数，则继续重试
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
+                
+                # 达到最大重试次数，更新状态为失败
+                db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
+                
+                # 构造错误响应数据
+                result_data = {
+                    "title": "",
+                    "content": "",
+                    "event_tags": [],
+                    "space_tags": [],
+                    "cat_tags": [],
+                    "impact_factors": [],
+                    "publish_time": "",
+                    "importance": "低",
+                    "state": ["爬取失败-JSON解析错误"],
+                    "url": url,
+                    "link_id": link_id,
+                    "workflow_id": workflow_id,
+                    "homepage_url": url,
+                    "source_note": source_note,
+                    "error": error_message,
+                    "process_time": f"{elapsed_time:.2f}秒"
+                }
+                
+                # 保存到数据库
+                save_to_db(link_id, result_data, False)
+                
+                return json.dumps(result_data, ensure_ascii=False)
+                
+        except Exception as e:
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            error_message = f"SDK调用出错: {str(e)}"
+            logger.error(f"{error_message}\n{traceback.format_exc()}")
             
-            # 记录impact_factors字段
-            logger.info(f"影响因素: {result_data.get('impact_factors', [])}")
+            # 如果未达到最大重试次数，则继续重试
+            if retry_count < max_retries:
+                retry_count += 1
+                logger.info(f"发生异常，进行第 {retry_count} 次重试")
+                continue
             
-            # 添加元数据
-            result_data["url"] = url
-            result_data["link_id"] = link_id
-            result_data["workflow_id"] = workflow_id
-            result_data["homepage_url"] = url
-            result_data["source_note"] = source_note
-            result_data["process_time"] = f"{elapsed_time:.2f}秒"
-            
-            # 检查保存前的数据
-            if 'title' in result_data:
-                logger.info(f"保存到数据库前的标题: [{result_data['title']}]")
-            else:
-                logger.info("警告: 结果数据中没有title字段")
-            
-            # 保存到数据库
-            success = save_to_db(link_id, result_data, True)
-            
-            # 更新工作流状态
-            if success:
-                db_utils.update_workflow_status(link_id, "COMPLETED", 
-                                             details={
-                                                 "title": result_data.get('title', '')[:100],
-                                                 "url": url,
-                                                 "process_time": f"{elapsed_time:.2f}秒"
-                                             })
-            else:
-                db_utils.update_workflow_status(link_id, "FAILED", error="保存到数据库失败")
-            
-            return json.dumps(result_data, ensure_ascii=False)
-            
-        except json.JSONDecodeError as e:
-            error_message = f"JSON解析错误: {str(e)}, 原始文本: {response_text[:100]}..."
-            logger.error(error_message)
-            
-            # 更新工作流状态为失败
+            # 达到最大重试次数，更新状态为失败
             db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
             
             # 构造错误响应数据
@@ -350,7 +355,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 "impact_factors": [],
                 "publish_time": "",
                 "importance": "低",
-                "state": ["爬取失败-JSON解析错误"],
+                "state": ["爬取失败-系统错误"],
                 "url": url,
                 "link_id": link_id,
                 "workflow_id": workflow_id,
@@ -361,45 +366,12 @@ def sdk_call(url, link_id=None, workflow_id=None):
             }
             
             # 保存到数据库
-            save_to_db(link_id, result_data, False)
+            try:
+                save_to_db(link_id, result_data, False)
+            except Exception as db_error:
+                logger.error(f"保存错误信息到数据库时出错: {str(db_error)}")
             
             return json.dumps(result_data, ensure_ascii=False)
-            
-    except Exception as e:
-        elapsed_time = (datetime.now() - start_time).total_seconds()
-        error_message = f"SDK调用出错: {str(e)}"
-        logger.error(f"{error_message}\n{traceback.format_exc()}")
-        
-        # 更新工作流状态为失败
-        db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
-        
-        # 构造错误响应数据
-        result_data = {
-            "title": "",
-            "content": "",
-            "event_tags": [],
-            "space_tags": [],
-            "cat_tags": [],
-            "impact_factors": [],
-            "publish_time": "",
-            "importance": "低",
-            "state": ["爬取失败-系统错误"],
-            "url": url,
-            "link_id": link_id,
-            "workflow_id": workflow_id,
-            "homepage_url": url,
-            "source_note": source_note,
-            "error": error_message,
-            "process_time": f"{elapsed_time:.2f}秒"
-        }
-        
-        # 保存到数据库
-        try:
-            save_to_db(link_id, result_data, False)
-        except Exception as db_error:
-            logger.error(f"保存错误信息到数据库时出错: {str(db_error)}")
-        
-        return json.dumps(result_data, ensure_ascii=False)
 
 def save_to_db(link_id, data, success):
     """保存结果到数据库"""
