@@ -1,12 +1,20 @@
 import os
 import logging
 import sys
+import tempfile
+import hashlib
 from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
 from datetime import datetime
 import time
 
 # 全局日志记录器字典
 _loggers = {}
+
+# 使用进程ID创建唯一标识符
+def get_process_id():
+    """获取当前进程的唯一标识符"""
+    import os
+    return os.getpid()
 
 class SafeRotatingFileHandler(TimedRotatingFileHandler):
     """
@@ -61,9 +69,13 @@ def setup_logger(name, log_dir="logs"):
     if logger.handlers:
         return logger
     
-    # 创建日志文件路径 - 添加时间戳以避免冲突
-    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
-    log_file = os.path.join(log_dir, f"{name}_{datetime.now().strftime('%Y%m%d')}_{timestamp}.log")
+    # 获取进程ID作为文件名的一部分
+    process_id = get_process_id()
+    
+    # 创建日志文件路径 - 使用日期和进程ID，避免同一天内不同进程冲突
+    # 但相同进程重启后使用相同文件
+    today = datetime.now().strftime('%Y%m%d')
+    log_file = os.path.join(log_dir, f"{name}_{today}_pid{process_id}.log")
     
     # 使用自定义的安全轮转处理器
     file_handler = SafeRotatingFileHandler(
