@@ -22,6 +22,7 @@
 - **工作流管理**: 协调各步骤间的数据流转，提供状态跟踪
 - **REST API**: 提供HTTP接口访问各功能，支持异步任务处理
 - **调度系统**: 使用APScheduler库实现可靠的定时任务调度，支持精确的时间间隔执行
+- **备用内容抓取**: 使用firecrawl_news_crawler.py作为备用抓取方案，当主要方法失败时自动切换
 
 ### 技术栈
 
@@ -70,6 +71,7 @@ DASHSCOPE_API_KEY=your_dashscope_key
 BAILIAN_APP_ID=your_bailian_app_id
 FIRECRAWL_API_KEY=your_firecrawl_key
 LINK_ANALYZER_APP_ID=your_link_analyzer_app_id
+MCP_BACKUP_APP_ID=your_mcp_backup_app_id
 
 PG_HOST=your_postgres_host
 PG_PORT=5432
@@ -300,6 +302,7 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 ├── step_1_homepage_scrape.py   # 步骤1实现 - 主页抓取
 ├── step2_link_test.py          # 步骤2实现 - 链接分析
 ├── step_3_scrape_test_sdk.py   # 步骤3实现 - 内容抓取和处理
+├── firecrawl_news_crawler.py   # FireCrawl新闻爬取组件，用作备用方案
 ├── db_utils.py                 # 数据库操作工具
 ├── pg_connection.py            # PostgreSQL连接管理
 ├── config.py                   # 配置和环境变量加载
@@ -341,7 +344,13 @@ MySQL服务器运行在 47.86.227.107:3306，使用root/root_password认证。
 
 ## 最近更新
 
-- **Step3重试机制增强**: 实现了更强大的重试机制，最多重试3次，每次间隔10秒，自动处理空结果和各类错误情况
+- **添加FireCrawl备用爬取机制**: 新增`firecrawl_news_crawler.py`组件作为备用内容爬取方案，当主要爬取方法失败时自动切换
+- **更新环境变量配置**: 添加了`MCP_BACKUP_APP_ID`环境变量，用于备用内容处理
+- **Step3失败处理流程增强**: 改进了Step3中的失败处理逻辑，主方法失败后自动调用FireCrawl备用方案
+- **日志输出优化**: 减少了数据库URL列表等非关键信息的日志输出，提高日志可读性
+- **重试机制调整**: 将Step3的最大重试次数从2次调整为1次，加快备用方案的启用
+- **内容分析流程优化**: 使用专门的新闻爬取组件提高内容提取准确性
+- **Step3重试机制增强**: 实现了更强大的重试机制，针对不同错误类型自动选择合适的处理方案
 - **日志系统进程隔离**: 使用进程ID作为日志文件名的一部分，确保同一进程使用同一个日志文件，防止多进程并发写入冲突
 - **数据库连接池健康管理**: 增加连接池健康检查和自修复机制，自动处理连接失效情况
 - **添加APScheduler调度系统**: 实现了基于APScheduler的可靠定时任务系统，支持精确时间间隔执行

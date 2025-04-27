@@ -4,6 +4,7 @@ import re
 import sys
 import time
 import traceback
+import subprocess
 from http import HTTPStatus
 from dashscope import Application
 import config
@@ -72,7 +73,8 @@ def get_homepage_info(url):
                 SELECT link FROM homepage_urls WHERE active = 1
             """)
             all_urls = [row['link'] for row in cursor.fetchall()]
-            logger.info(f"数据库中的所有主页URL: {all_urls}")
+            # 不输出完整的URL列表，只输出数量
+            logger.info(f"数据库中活跃的主页URL数量: {len(all_urls)}")
             
             # 先尝试直接匹配域名
             cursor.execute("""
@@ -132,6 +134,47 @@ def get_homepage_info(url):
         logger.error(traceback.format_exc())
         return None, None
 
+def try_firecrawl_backup(url):
+    """
+    尝试使用firecrawl_news_crawler.py作为备用方案爬取内容
+    
+    参数:
+        url (str): 要爬取的URL
+        
+    返回:
+        dict: 成功时返回处理后的结果字典，失败时返回None
+    """
+    try:
+        logger.info(f"尝试使用firecrawl_news_crawler.py作为备用方案爬取: {url}")
+        
+        # 构建调用firecrawl_news_crawler.py的命令
+        cmd = [sys.executable, "firecrawl_news_crawler.py", url]
+        
+        # 运行命令并捕获输出
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        
+        # 尝试解析JSON输出
+        if result.stdout.strip():
+            try:
+                json_result = json.loads(result.stdout)
+                logger.info(f"firecrawl备用方案成功, 获取到标题: {json_result.get('title', '')[:30]}")
+                return json_result
+            except json.JSONDecodeError as e:
+                logger.error(f"无法解析firecrawl返回的JSON: {e}")
+                logger.error(f"输出内容: {result.stdout[:200]}...")
+        else:
+            logger.error("firecrawl备用方案返回空结果")
+            
+        return None
+    except subprocess.CalledProcessError as e:
+        logger.error(f"firecrawl备用方案执行失败: {e}")
+        logger.error(f"stderr: {e.stderr[:200]}")
+        return None
+    except Exception as e:
+        logger.error(f"使用firecrawl备用方案时出错: {e}")
+        logger.error(traceback.format_exc())
+        return None
+
 def sdk_call(url, link_id=None, workflow_id=None):
     """使用SDK调用百炼应用处理URL"""
     start_time = datetime.now()
@@ -155,7 +198,7 @@ def sdk_call(url, link_id=None, workflow_id=None):
     db_utils.update_workflow_status(link_id, "PROCESSING", details={"url": url})
     
     # 设置最大重试次数和当前重试计数
-    max_retries = 2  # 设置为2次重试
+    max_retries = 1  # 设置为1次重试
     retry_count = 0
     
     while retry_count <= max_retries:  # 允许初始尝试 + 最多2次重试
@@ -188,7 +231,43 @@ def sdk_call(url, link_id=None, workflow_id=None):
                     retry_count += 1
                     continue
                 
-                # 达到最大重试次数，更新状态为失败
+                # 达到最大重试次数，尝试使用firecrawl备用方案
+                logger.info(f"主方案尝试{max_retries}次后失败，切换至firecrawl备用方案")
+                firecrawl_result = try_firecrawl_backup(url)
+                
+                if firecrawl_result:
+                    logger.info("firecrawl备用方案成功，使用其结果")
+                    
+                    # 添加元数据
+                    firecrawl_result["url"] = url
+                    firecrawl_result["link_id"] = link_id
+                    firecrawl_result["workflow_id"] = workflow_id
+                    firecrawl_result["homepage_url"] = url
+                    firecrawl_result["source_note"] = source_note
+                    
+                    # 更新处理时间（如果不存在）
+                    if "process_time" not in firecrawl_result:
+                        elapsed_time = (datetime.now() - start_time).total_seconds()
+                        firecrawl_result["process_time"] = f"{elapsed_time:.2f}秒"
+                    
+                    # 保存到数据库
+                    success = save_to_db(link_id, firecrawl_result, True)
+                    
+                    # 更新工作流状态
+                    if success:
+                        db_utils.update_workflow_status(link_id, "COMPLETED", 
+                                                     details={
+                                                         "title": firecrawl_result.get('title', '')[:100],
+                                                         "url": url,
+                                                         "process_time": firecrawl_result.get("process_time", ""),
+                                                         "method": "firecrawl_backup"
+                                                     })
+                    else:
+                        db_utils.update_workflow_status(link_id, "FAILED", error="保存firecrawl结果到数据库失败")
+                    
+                    return json.dumps(firecrawl_result, ensure_ascii=False)
+                
+                # firecrawl备用方案也失败，更新状态为失败
                 db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
                 
                 # 构造错误响应数据
@@ -259,7 +338,42 @@ def sdk_call(url, link_id=None, workflow_id=None):
                         retry_count += 1
                         continue
                     else:
-                        logger.warning(f"已达到最大重试次数 {max_retries}，使用最后一次获取的结果")
+                        logger.warning(f"已达到最大重试次数 {max_retries}，尝试使用firecrawl备用方案")
+                        firecrawl_result = try_firecrawl_backup(url)
+                        
+                        if firecrawl_result:
+                            logger.info("firecrawl备用方案成功，使用其结果")
+                            
+                            # 添加元数据
+                            firecrawl_result["url"] = url
+                            firecrawl_result["link_id"] = link_id
+                            firecrawl_result["workflow_id"] = workflow_id
+                            firecrawl_result["homepage_url"] = url
+                            firecrawl_result["source_note"] = source_note
+                            
+                            # 更新处理时间（如果不存在）
+                            if "process_time" not in firecrawl_result:
+                                elapsed_time = (datetime.now() - start_time).total_seconds()
+                                firecrawl_result["process_time"] = f"{elapsed_time:.2f}秒"
+                            
+                            # 保存到数据库
+                            success = save_to_db(link_id, firecrawl_result, True)
+                            
+                            # 更新工作流状态
+                            if success:
+                                db_utils.update_workflow_status(link_id, "COMPLETED", 
+                                                             details={
+                                                                 "title": firecrawl_result.get('title', '')[:100],
+                                                                 "url": url,
+                                                                 "process_time": firecrawl_result.get("process_time", ""),
+                                                                 "method": "firecrawl_backup"
+                                                             })
+                            else:
+                                db_utils.update_workflow_status(link_id, "FAILED", error="保存firecrawl结果到数据库失败")
+                            
+                            return json.dumps(firecrawl_result, ensure_ascii=False)
+                        else:
+                            logger.warning(f"firecrawl备用方案也失败，使用最后一次获取的结果")
                 
                 # 记录impact_factors字段
                 logger.info(f"影响因素: {result_data.get('impact_factors', [])}")
@@ -303,6 +417,42 @@ def sdk_call(url, link_id=None, workflow_id=None):
                     retry_count += 1
                     continue
                 
+                # 达到最大重试次数，尝试使用firecrawl备用方案
+                logger.info(f"主方案JSON解析失败，切换至firecrawl备用方案")
+                firecrawl_result = try_firecrawl_backup(url)
+                
+                if firecrawl_result:
+                    logger.info("firecrawl备用方案成功，使用其结果")
+                    
+                    # 添加元数据
+                    firecrawl_result["url"] = url
+                    firecrawl_result["link_id"] = link_id
+                    firecrawl_result["workflow_id"] = workflow_id
+                    firecrawl_result["homepage_url"] = url
+                    firecrawl_result["source_note"] = source_note
+                    
+                    # 更新处理时间（如果不存在）
+                    if "process_time" not in firecrawl_result:
+                        elapsed_time = (datetime.now() - start_time).total_seconds()
+                        firecrawl_result["process_time"] = f"{elapsed_time:.2f}秒"
+                    
+                    # 保存到数据库
+                    success = save_to_db(link_id, firecrawl_result, True)
+                    
+                    # 更新工作流状态
+                    if success:
+                        db_utils.update_workflow_status(link_id, "COMPLETED", 
+                                                     details={
+                                                         "title": firecrawl_result.get('title', '')[:100],
+                                                         "url": url,
+                                                         "process_time": firecrawl_result.get("process_time", ""),
+                                                         "method": "firecrawl_backup"
+                                                     })
+                    else:
+                        db_utils.update_workflow_status(link_id, "FAILED", error="保存firecrawl结果到数据库失败")
+                    
+                    return json.dumps(firecrawl_result, ensure_ascii=False)
+                
                 # 达到最大重试次数，更新状态为失败
                 db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
                 
@@ -341,6 +491,42 @@ def sdk_call(url, link_id=None, workflow_id=None):
                 retry_count += 1
                 logger.info(f"发生异常，进行第 {retry_count} 次重试")
                 continue
+            
+            # 达到最大重试次数，尝试使用firecrawl备用方案
+            logger.info(f"主方案异常失败，切换至firecrawl备用方案")
+            firecrawl_result = try_firecrawl_backup(url)
+            
+            if firecrawl_result:
+                logger.info("firecrawl备用方案成功，使用其结果")
+                
+                # 添加元数据
+                firecrawl_result["url"] = url
+                firecrawl_result["link_id"] = link_id
+                firecrawl_result["workflow_id"] = workflow_id
+                firecrawl_result["homepage_url"] = url
+                firecrawl_result["source_note"] = source_note
+                
+                # 更新处理时间（如果不存在）
+                if "process_time" not in firecrawl_result:
+                    elapsed_time = (datetime.now() - start_time).total_seconds()
+                    firecrawl_result["process_time"] = f"{elapsed_time:.2f}秒"
+                
+                # 保存到数据库
+                success = save_to_db(link_id, firecrawl_result, True)
+                
+                # 更新工作流状态
+                if success:
+                    db_utils.update_workflow_status(link_id, "COMPLETED", 
+                                                 details={
+                                                     "title": firecrawl_result.get('title', '')[:100],
+                                                     "url": url,
+                                                     "process_time": firecrawl_result.get("process_time", ""),
+                                                     "method": "firecrawl_backup"
+                                                 })
+                else:
+                    db_utils.update_workflow_status(link_id, "FAILED", error="保存firecrawl结果到数据库失败")
+                
+                return json.dumps(firecrawl_result, ensure_ascii=False)
             
             # 达到最大重试次数，更新状态为失败
             db_utils.update_workflow_status(link_id, "FAILED", error=error_message)
