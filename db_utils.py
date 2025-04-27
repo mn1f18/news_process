@@ -23,35 +23,42 @@ def init_db_pools():
     """初始化数据库连接池"""
     global PG_POOL, MYSQL_POOL
     
+    # 初始化PostgreSQL连接池
     try:
-        # 初始化 PostgreSQL 连接池
-        PG_POOL = psycopg2.pool.SimpleConnectionPool(
-            minconn=1,
-            maxconn=10,
-            host=PG_CONFIG['host'],
-            port=PG_CONFIG['port'],
-            database=PG_CONFIG['database'],
-            user=PG_CONFIG['user'],
-            password=PG_CONFIG['password']
-        )
-        logger.info("PostgreSQL 连接池初始化成功")
+        if not PG_POOL:
+            PG_POOL = psycopg2.pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=20,
+                **PG_CONFIG
+            )
+            logger.info("PostgreSQL 连接池初始化成功")
     except Exception as e:
         logger.error(f"PostgreSQL 连接池初始化失败: {str(e)}")
         logger.error(traceback.format_exc())
         PG_POOL = None
     
+    # 初始化MySQL连接池
     try:
-        # 初始化 MySQL 连接池
-        MYSQL_POOL = mysql.connector.pooling.MySQLConnectionPool(
-            pool_name="mysql_pool",
-            pool_size=10,
-            host=MYSQL_CONFIG['host'],
-            port=MYSQL_CONFIG['port'],
-            database=MYSQL_CONFIG['database'],
-            user=MYSQL_CONFIG['user'],
-            password=MYSQL_CONFIG['password']
-        )
-        logger.info("MySQL 连接池初始化成功")
+        if not MYSQL_POOL:
+            # 添加超时和连接设置
+            mysql_config = MYSQL_CONFIG.copy()
+            mysql_config.update({
+                "connection_timeout": 10,  # 10秒连接超时
+                "use_pure": True,  # 使用纯Python实现
+                "ssl_disabled": True,  # 禁用SSL
+                "pool_name": "mysql_pool",
+                "pool_size": 5
+            })
+            
+            # 记录开始连接时间
+            start_time = time.time()
+            logger.info(f"开始初始化MySQL连接池...")
+            
+            MYSQL_POOL = mysql.connector.pooling.MySQLConnectionPool(**mysql_config)
+            
+            # 记录连接完成时间
+            elapsed_time = time.time() - start_time
+            logger.info(f"MySQL 连接池初始化成功，耗时: {elapsed_time:.2f}秒")
     except Exception as e:
         logger.error(f"MySQL 连接池初始化失败: {str(e)}")
         logger.error(traceback.format_exc())

@@ -7,6 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from firecrawl import FirecrawlApp
 from dashscope import Application
+import time
 
 # 加载环境变量
 load_dotenv()
@@ -55,39 +56,74 @@ def create_error_response(url, error_message, stage, link_id=None, workflow_id=N
         "process_time": process_time
     }
 
-def process_content_with_mcp_backup(markdown_content):
-    """使用阿里云API处理Markdown内容"""
-    try:
-        # 调用阿里云API
-        response = Application.call(
-            api_key=DASHSCOPE_API_KEY,
-            app_id=MCP_BACKUP_APP_ID,
-            prompt=markdown_content  # 直接传入markdown内容作为prompt
-        )
-        
-        if response.status_code != 200:
-            return None
-        
-        # 尝试从响应中提取JSON
+def process_content_with_mcp_backup(markdown_content, max_retries=1):
+    """使用阿里云API处理Markdown内容，添加重试机制"""
+    retry_count = 0
+    
+    while retry_count <= max_retries:  # 允许初始尝试 + 最多max_retries次重试
         try:
-            result_text = response.output.text
-            # 查找第一个{和最后一个}之间的内容
-            start = result_text.find('{')
-            end = result_text.rfind('}')
-            if start != -1 and end != -1:
-                json_str = result_text[start:end+1]
-                json_result = json.loads(json_str)
-                return json_result
-            else:
-                return None
-        except json.JSONDecodeError:
-            return None
+            # 如果是重试，等待一段时间
+            if retry_count > 0:
+                wait_time = 5  # 设置为5秒等待时间
+                time.sleep(wait_time)
             
-    except Exception:
-        return None
+            # 调用阿里云API
+            response = Application.call(
+                api_key=DASHSCOPE_API_KEY,
+                app_id=MCP_BACKUP_APP_ID,
+                prompt=markdown_content,  # 直接传入markdown内容作为prompt
+                timeout=30  # 30秒超时
+            )
+            
+            if response.status_code != 200:
+                # 如果未达到最大重试次数，则继续重试
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
+                return None
+            
+            # 尝试从响应中提取JSON
+            try:
+                result_text = response.output.text
+                # 查找第一个{和最后一个}之间的内容
+                start = result_text.find('{')
+                end = result_text.rfind('}')
+                if start != -1 and end != -1:
+                    json_str = result_text[start:end+1]
+                    json_result = json.loads(json_str)
+                    
+                    # 检查重要字段是否存在
+                    if not json_result.get('title') or not json_result.get('content'):
+                        # 如果关键字段为空且未达到最大重试次数，则重试
+                        if retry_count < max_retries:
+                            retry_count += 1
+                            continue
+                    
+                    return json_result
+                else:
+                    # 如果未达到最大重试次数，则继续重试
+                    if retry_count < max_retries:
+                        retry_count += 1
+                        continue
+                    return None
+            except json.JSONDecodeError:
+                # 如果未达到最大重试次数，则继续重试
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
+                return None
+                
+        except Exception:
+            # 如果未达到最大重试次数，则继续重试
+            if retry_count < max_retries:
+                retry_count += 1
+                continue
+            return None
+    
+    return None
 
-def scrape_news_article(url, link_id=None, workflow_id=None):
-    """爬取新闻文章内容并使用阿里云API处理"""
+def scrape_news_article(url, link_id=None, workflow_id=None, max_retries=1):
+    """爬取新闻文章内容并使用阿里云API处理，添加重试机制"""
     start_time = datetime.now()
     
     # 生成唯一标识符
@@ -103,71 +139,104 @@ def scrape_news_article(url, link_id=None, workflow_id=None):
     params = {
         "formats": ["markdown"],
         "removeBase64Images": True,
+        "timeout": 60,  # 60秒超时
         "agent": {
             "model": "FIRE-1",
             "prompt": "只提取新闻文章的正文内容、标题和发布时间。不要包含广告、导航栏、侧边栏或其他非正文内容。确保内容格式清晰。"
         }
     }
     
-    try:
-        # 执行爬取
-        result = app.scrape_url(url, params=params)
-        
-        # 如果API返回的是成功信息格式，获取data部分
-        if isinstance(result, dict) and "data" in result:
-            result = result.get("data", {})
-        
-        if not result or "markdown" not in result:
-            elapsed_time = (datetime.now() - start_time).total_seconds()
-            return create_error_response(url, "未获取到有效内容", "FireCrawl爬取失败", link_id, workflow_id, elapsed_time)
+    retry_count = 0
+    
+    while retry_count <= max_retries:  # 允许初始尝试 + 最多max_retries次重试
+        try:
+            # 如果是重试，等待一段时间
+            if retry_count > 0:
+                wait_time = 5  # 设置为5秒等待时间
+                time.sleep(wait_time)
             
-        # 获取Markdown内容
-        markdown_content = result.get("markdown", "")
-        
-        if not markdown_content:
-            elapsed_time = (datetime.now() - start_time).total_seconds()
-            return create_error_response(url, "未获取到文章内容", "FireCrawl爬取失败", link_id, workflow_id, elapsed_time)
+            # 执行爬取
+            result = app.scrape_url(url, params=params)
             
-        # 使用阿里云API处理内容
-        processed_result = process_content_with_mcp_backup(markdown_content)
-        
-        elapsed_time = (datetime.now() - start_time).total_seconds()
-        
-        if processed_result:
-            # 设置状态为爬取成功
-            if isinstance(processed_result, dict) and "state" not in processed_result:
-                processed_result["state"] = ["爬取成功"]
+            # 如果API返回的是成功信息格式，获取data部分
+            if isinstance(result, dict) and "data" in result:
+                result = result.get("data", {})
+            
+            if not result or "markdown" not in result:
+                # 如果未达到最大重试次数，则继续重试
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
                 
-            # 添加元数据
-            processed_result["url"] = url
-            processed_result["link_id"] = link_id
-            processed_result["workflow_id"] = workflow_id
-            processed_result["process_time"] = f"{elapsed_time:.2f}秒"
+                elapsed_time = (datetime.now() - start_time).total_seconds()
+                return create_error_response(url, "未获取到有效内容", "FireCrawl爬取失败", link_id, workflow_id, elapsed_time)
+                
+            # 获取Markdown内容
+            markdown_content = result.get("markdown", "")
             
-            # 确保所有必要字段存在
-            default_fields = {
-                "title": "",
-                "content": "",
-                "event_tags": [],
-                "space_tags": [],
-                "cat_tags": [],
-                "impact_factors": [],
-                "publish_time": "",
-                "importance": "低"
-            }
+            if not markdown_content:
+                # 如果未达到最大重试次数，则继续重试
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
+                
+                elapsed_time = (datetime.now() - start_time).total_seconds()
+                return create_error_response(url, "未获取到文章内容", "FireCrawl爬取失败", link_id, workflow_id, elapsed_time)
+                
+            # 使用阿里云API处理内容
+            processed_result = process_content_with_mcp_backup(markdown_content, max_retries)
             
-            # 用默认值填充缺失字段
-            for field, default_value in default_fields.items():
-                if field not in processed_result:
-                    processed_result[field] = default_value
+            elapsed_time = (datetime.now() - start_time).total_seconds()
             
-            return processed_result
-        else:
-            return create_error_response(url, "内容处理失败", "阿里云API处理失败", link_id, workflow_id, elapsed_time)
+            if processed_result:
+                # 设置状态为爬取成功
+                if isinstance(processed_result, dict) and "state" not in processed_result:
+                    processed_result["state"] = ["爬取成功"]
+                    
+                # 添加元数据
+                processed_result["url"] = url
+                processed_result["link_id"] = link_id
+                processed_result["workflow_id"] = workflow_id
+                processed_result["process_time"] = f"{elapsed_time:.2f}秒"
+                
+                # 确保所有必要字段存在
+                default_fields = {
+                    "title": "",
+                    "content": "",
+                    "event_tags": [],
+                    "space_tags": [],
+                    "cat_tags": [],
+                    "impact_factors": [],
+                    "publish_time": "",
+                    "importance": "低"
+                }
+                
+                # 用默认值填充缺失字段
+                for field, default_value in default_fields.items():
+                    if field not in processed_result:
+                        processed_result[field] = default_value
+                
+                return processed_result
+            else:
+                # 如果未达到最大重试次数，则继续重试
+                if retry_count < max_retries:
+                    retry_count += 1
+                    continue
+                
+                return create_error_response(url, "内容处理失败", "阿里云API处理失败", link_id, workflow_id, elapsed_time)
+                
+        except Exception as e:
+            # 如果未达到最大重试次数，则继续重试
+            if retry_count < max_retries:
+                retry_count += 1
+                continue
             
-    except Exception as e:
-        elapsed_time = (datetime.now() - start_time).total_seconds()
-        return create_error_response(url, f"爬取错误: {str(e)}", "系统错误", link_id, workflow_id, elapsed_time)
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            return create_error_response(url, f"爬取错误: {str(e)}", "系统错误", link_id, workflow_id, elapsed_time)
+    
+    # 如果所有重试都失败，返回一个通用错误
+    elapsed_time = (datetime.now() - start_time).total_seconds()
+    return create_error_response(url, "所有重试都失败", "系统错误", link_id, workflow_id, elapsed_time)
 
 def main():
     # 获取用户输入的URL
@@ -183,9 +252,9 @@ def main():
     # 爬取并处理文章
     result = scrape_news_article(url)
     
-    # 输出结果
+    # 输出结果，不使用缩进以确保与step_3兼容
     if result:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        print(json.dumps(result, ensure_ascii=False))
     else:
         print(json.dumps({"state": ["爬取失败"]}, ensure_ascii=False))
 

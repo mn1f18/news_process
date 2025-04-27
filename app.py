@@ -1142,4 +1142,4 @@ if __name__ == '__main__':
         logger.info("启动API服务器...")
         logger.info("启动调度器...")
         # 调度器已在应用程序启动时初始化
-        app.run(host='0.0.0.0', port=5000, debug=True) 
+        app.run(host='0.0.0.0', port=5000, debug=False) 
