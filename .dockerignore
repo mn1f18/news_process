@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Docker
+# 保留Dockerfile和docker-compose.yml，以便在容器内部可以查看它们
+# Dockerfile
+# docker-compose.yml
+# .dockerignore
+
+# 其他文件
+.DS_Store
+# 保留README.md以便在容器内部可以查看
+# README.md
+
+# 不要忽略.env文件，将使用它来配置环境
+# .env 
