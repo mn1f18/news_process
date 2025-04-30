@@ -26,7 +26,7 @@ if not config.check_env_vars():
 try:
     connection_pool = mysql.connector.pooling.MySQLConnectionPool(
         pool_name="sdk_pool",
-        pool_size=5,
+        pool_size=20,
         **config.MYSQL_CONFIG
     )
     logger.info("MySQL连接池初始化成功")
@@ -64,10 +64,12 @@ def get_homepage_info(url):
         parsed_url = urlparse(url)
             
         # 从连接池获取连接
-        conn = connection_pool.get_connection()
-        cursor = conn.cursor(dictionary=True)
-        
+
+        conn = None  # 添加这行
+        cursor = None  # 添加这行       
         try:
+            conn = connection_pool.get_connection()
+            cursor = conn.cursor(dictionary=True)
             # 记录所有可能的主页URL，帮助调试
             cursor.execute("""
                 SELECT link FROM homepage_urls WHERE active = 1
@@ -126,8 +128,10 @@ def get_homepage_info(url):
             
             return None, None
         finally:
-            cursor.close()
-            conn.close()
+            if cursor:  # 修改这行
+                cursor.close()
+            if conn:  # 修改这行
+                conn.close()
             
     except Exception as e:
         logger.error(f"获取主页信息时出错: {str(e)}")
