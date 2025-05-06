@@ -27,11 +27,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 安装生产级WSGI服务器
 RUN pip install --no-cache-dir gunicorn
 
+# 添加API域名到hosts文件以解决DNS解析问题
+RUN echo "34.111.212.187 api.firecrawl.dev" >> /etc/hosts
+
 # 暴露端口
 EXPOSE 5000
 
-# 切换到非root用户
-USER appuser
+# 切换到非root用户 - 暂时注释掉以解决权限问题
+# USER appuser
 
-# 启动命令 - 使用supervisord
-CMD ["supervisord", "-c", "/app/supervisord.conf"] 
+# 原来的启动命令，已被docker-compose.yml中的command覆盖
+# CMD ["supervisord", "-c", "/app/supervisord.conf"]
