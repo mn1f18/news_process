@@ -15,6 +15,8 @@ services:
       - TZ=Asia/Shanghai
     networks:
       - mcp-network
+    entrypoint: []
+    command: ["gunicorn", "--bind", "0.0.0.0:5000", "app:app", "--workers", "4", "--threads", "2", "--timeout", "120", "--access-logfile", "/app/logs/gunicorn_access.log", "--error-logfile", "/app/logs/gunicorn_error.log"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 30s
@@ -50,8 +52,7 @@ services:
 networks:
   mcp-network:
     driver: bridge
-    external: true
 
 volumes:
   postgres_data:
-  mysql_data: 
+  mysql_data:

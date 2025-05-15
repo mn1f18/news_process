@@ -21,7 +21,7 @@ ssh root@47.86.227.107
 
 # 检查Docker版本
 docker --version
-docker-compose --version
+docker compose --version
 
 # 检查Python版本
 python3 --version
@@ -56,7 +56,7 @@ git clone <your-repository-url> .
 确保以下关键文件存在：
 
 ```bash
-ls -la Dockerfile docker-compose.yml supervisord.conf nginx.conf .env requirements.txt
+ls -la Dockerfile docker-compose.yml nginx.conf .env requirements.txt
 ```
 
 #### 3.2 配置环境变量
@@ -64,24 +64,21 @@ ls -la Dockerfile docker-compose.yml supervisord.conf nginx.conf .env requiremen
 检查并修改.env文件，特别是数据库连接信息：
 
 ```bash
-# 使用服务器本机的数据库（如果PostgreSQL和MySQL安装在服务器上）
-nano .env
+# 编辑.env文件
+vim .env
 
 # 修改数据库连接配置为：
-# PG_HOST=localhost 或 PG_HOST=172.31.11.32
-# MYSQL_HOST=localhost 或 MYSQL_HOST=172.31.11.32
-```
+PG_HOST=47.86.227.107
+PG_PORT=5432
+PG_USER=postgres
+PG_PASSWORD=root_password
+PG_DATABASE=postgres
 
-#### 3.3 调整docker-compose.yml（如需使用服务器数据库）
-
-如果您想使用服务器上已有的数据库，而不是Docker容器数据库：
-
-```bash
-nano docker-compose.yml
-
-# 移除postgresql和mysql服务部分
-# 移除volumes定义中的postgres_data和mysql_data
-# 移除mcp服务的depends_on部分中对postgres和mysql的依赖
+MYSQL_HOST=47.86.227.107
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=root_password
+MYSQL_DATABASE=news_content
 ```
 
 ### 4. 准备目录和权限
@@ -90,64 +87,48 @@ nano docker-compose.yml
 # 创建日志和数据目录
 mkdir -p logs data
 chmod 777 logs data
-
-# 确保Supervisor配置适合Linux环境
-nano supervisord.conf
-
-# 修改supervisord.conf中的路径，确保使用Linux路径格式
-# 比如将文件目录从Windows格式：C:/Python/github/mcp/
-# 改为Linux格式：/app/
 ```
 
 ### 5. 构建和启动服务
 
-首先确保您的应用能够连接到现有的数据库容器网络：
+首先创建Docker网络并连接数据库容器：
 
 ```bash
-# 查看现有网络
-docker network ls
+# 创建网络
+docker network create mcp-network
 
-# 确认数据库容器所在的网络
-docker inspect mcp-postgres-1 | grep -A 10 "Networks"
-docker inspect mcp-mysql-1 | grep -A 10 "Networks"
-
-# 如果需要，将应用添加到现有网络
-# docker network connect <network_name> <container_name>
+# 将已有的数据库容器连接到网络
+docker network connect mcp-network mcp-postgres-1
+docker network connect mcp-network mcp-mysql-1
 ```
 
 然后构建并启动服务：
 
 ```bash
 # 构建Docker镜像并启动服务（后台运行）
-docker-compose up -d --build
-
-# 查看构建和启动过程
-docker-compose logs -f
+docker compose up -d
 
 # 检查容器是否正常运行
-docker-compose ps
+docker ps
 ```
 
-### 6. 数据库初始化（可选，如果表已存在）
-
-由于数据库容器(mcp-postgres-1和mcp-mysql-1)已经存在，并且数据表已经创建好，此步骤通常可以跳过。如果需要验证表是否存在，可以执行：
+如果应用容器未自动连接到网络，手动连接：
 
 ```bash
-# 验证PostgreSQL表是否存在
-docker exec mcp-postgres-1 psql -U postgres -c "\dt"
-
-# 验证MySQL表是否存在
-docker exec mcp-mysql-1 mysql -u root -proot_password news_content -e "SHOW TABLES"
+docker network connect mcp-network mcp-mcp-1
+docker network connect mcp-network mcp-nginx-1
 ```
 
-如果需要重新创建表（谨慎操作，可能会丢失数据）：
+### 6. 检查数据库连接
+
+确认应用能够连接到数据库：
 
 ```bash
-# 初始化PostgreSQL数据库
-docker-compose exec mcp python create_postgresql_tables.py
+# 查看应用日志，确认数据库连接成功
+docker logs mcp-mcp-1
 
-# 初始化MySQL数据库
-docker-compose exec mcp python create_mysql_tables.py
+# 如果看到数据库连接错误，检查网络连接
+docker network inspect mcp-network
 ```
 
 ### 7. 验证部署
@@ -158,12 +139,6 @@ curl http://localhost/
 
 # 使用外部地址测试
 curl http://47.86.227.107/
-
-# 检查Supervisor管理的进程状态
-docker-compose exec mcp supervisorctl status
-
-# 检查Gunicorn日志
-docker-compose exec mcp cat /app/logs/gunicorn_access.log
 ```
 
 ### 8. 测试工作流
@@ -175,8 +150,7 @@ docker-compose exec mcp cat /app/logs/gunicorn_access.log
 curl -X POST http://47.86.227.107/api/workflow/all -H "Content-Type: application/json" -d "{\"interval_minutes\": 120}"
 
 # 查看工作流状态
-docker-compose exec mcp supervisorctl status
-docker-compose exec mcp cat /app/logs/workflow_stdout.log
+curl http://47.86.227.107/api/workflows
 ```
 
 ## 维护操作
@@ -185,42 +159,36 @@ docker-compose exec mcp cat /app/logs/workflow_stdout.log
 
 ```bash
 # 检查容器状态
-docker-compose ps
+docker ps
 
 # 查看容器日志
-docker-compose logs -f mcp
+docker logs -f mcp-mcp-1
 
 # 查看Nginx日志
-docker-compose logs -f nginx
+docker logs -f mcp-nginx-1
 
-# 查看Gunicorn访问日志
-docker exec -it $(docker-compose ps -q mcp) cat /app/logs/gunicorn_access.log
-
-# 查看Gunicorn错误日志
-docker exec -it $(docker-compose ps -q mcp) cat /app/logs/gunicorn_error.log
-
-# 查看应用程序日志（根据您的logger_config.py配置）
-docker exec -it $(docker-compose ps -q mcp) ls -la /app/logs/
-docker exec -it $(docker-compose ps -q mcp) cat /app/logs/app.log  # 或其它应用程序日志文件
+# 查看应用程序日志
+docker exec -it mcp-mcp-1 ls -la /app/logs/
+docker exec -it mcp-mcp-1 cat /app/logs/app_*.log
 
 # 监控容器资源使用
 docker stats
 ```
 
-### 进程管理
+### 工作流管理
 
 ```bash
-# 查看Supervisor状态
-docker-compose exec mcp supervisorctl status
+# 查看调度器任务
+curl http://localhost/api/scheduler/jobs
 
-# 重启应用程序
-docker-compose exec mcp supervisorctl restart mcp
+# 暂停任务
+curl -X POST http://localhost/api/scheduler/pause/<job_id>
 
-# 重启工作流程序
-docker-compose exec mcp supervisorctl restart mcp_workflow
+# 恢复任务
+curl -X POST http://localhost/api/scheduler/resume/<job_id>
 
-# 重新加载Supervisor配置
-docker-compose exec mcp supervisorctl reload
+# 移除任务
+curl -X POST http://localhost/api/scheduler/remove/<job_id>
 ```
 
 ### 数据备份
@@ -230,14 +198,10 @@ docker-compose exec mcp supervisorctl reload
 mkdir -p /opt/mcp/backups
 
 # 备份PostgreSQL数据库
-docker-compose exec postgres pg_dump -U postgres postgres > /opt/mcp/backups/pg_backup_$(date +%Y%m%d).sql
-# 或者直接在服务器上执行
-pg_dump -h localhost -U postgres postgres > /opt/mcp/backups/pg_backup_$(date +%Y%m%d).sql
+docker exec mcp-postgres-1 pg_dump -U postgres postgres > /opt/mcp/backups/pg_backup_$(date +%Y%m%d).sql
 
 # 备份MySQL数据库
-docker-compose exec mysql mysqldump -u root -proot_password news_content > /opt/mcp/backups/mysql_backup_$(date +%Y%m%d).sql
-# 或者直接在服务器上执行
-mysqldump -h localhost -u root -proot_password news_content > /opt/mcp/backups/mysql_backup_$(date +%Y%m%d).sql
+docker exec mcp-mysql-1 mysqldump -u root -proot_password news_content > /opt/mcp/backups/mysql_backup_$(date +%Y%m%d).sql
 
 # 设置自动备份（添加到crontab）
 echo "0 2 * * * root pg_dump -h localhost -U postgres postgres > /opt/mcp/backups/pg_backup_\$(date +\%Y\%m\%d).sql" > /etc/cron.d/mcp_backup
@@ -249,16 +213,16 @@ chmod 644 /etc/cron.d/mcp_backup
 
 ```bash
 # 停止服务
-docker-compose down
+docker compose down
 
 # 拉取最新代码
 git pull
 
 # 重新构建并启动服务
-docker-compose up -d --build
+docker compose up -d --build
 
 # 查看更新后的日志
-docker-compose logs -f
+docker logs -f mcp-mcp-1
 ```
 
 ## 故障排除
@@ -267,18 +231,14 @@ docker-compose logs -f
 
 ```bash
 # 检查Docker错误日志
-docker-compose logs mcp
+docker logs mcp-mcp-1
 
 # 检查Docker系统日志
 journalctl -u docker
 
-# 确认容器是否有足够资源
-docker stats
-
 # 重置并重启服务
-docker-compose down
-docker system prune -f
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ### 2. 数据库连接问题
@@ -287,92 +247,66 @@ docker-compose up -d
 # 检查数据库连接配置
 cat .env
 
-# 测试PostgreSQL连接
-docker-compose exec mcp python -c "import psycopg2; conn=psycopg2.connect(dbname='postgres', user='postgres', host='localhost', password='root_password'); print('连接成功')"
+# 确保使用正确的主机IP
+PG_HOST=47.86.227.107
+MYSQL_HOST=47.86.227.107
 
-# 测试MySQL连接
-docker-compose exec mcp python -c "import mysql.connector; conn=mysql.connector.connect(host='localhost', user='root', password='root_password', database='news_content'); print('连接成功')"
+# 确保所有容器连接到同一网络
+docker network inspect mcp-network
 
-# 检查服务器上的数据库服务是否运行
-systemctl status postgresql
-systemctl status mysql
+# 重新连接容器到网络
+docker network connect mcp-network mcp-postgres-1
+docker network connect mcp-network mcp-mysql-1
+docker network connect mcp-network mcp-mcp-1
+docker network connect mcp-network mcp-nginx-1
 
-# 确保数据库允许远程连接
-# PostgreSQL: 检查pg_hba.conf
-# MySQL: 检查my.cnf中的bind-address
+# 重建容器
+docker compose down
+docker compose up -d
 ```
 
 ### 3. API无法访问
 
 ```bash
 # 检查Nginx配置
-docker-compose exec nginx nginx -t
+docker exec mcp-nginx-1 nginx -t
 
 # 查看Nginx日志
-docker-compose logs nginx
-
-# 检查防火墙设置
-iptables -L
+docker logs mcp-nginx-1
 
 # 测试内部服务连通性
-docker-compose exec nginx curl http://mcp:5000/
+docker exec mcp-nginx-1 curl http://mcp-mcp-1:5000/
 ```
 
-### 4. Supervisor相关问题
+### 4. API库版本不兼容
+
+如果出现API错误（例如"unrecognized_keys"）：
 
 ```bash
-# 检查Supervisor配置
-docker-compose exec mcp cat /app/supervisord.conf
+# 检查firecrawl库版本
+docker exec mcp-mcp-1 pip show firecrawl
 
-# 重载配置
-docker-compose exec mcp supervisorctl reload
+# 修改requirements.txt锁定版本
+# 添加: firecrawl==1.15.0
 
-# 查看Supervisor管理的进程状态
-docker-compose exec mcp supervisorctl status
+# 重新安装兼容版本
+docker exec mcp-mcp-1 pip install firecrawl==1.15.0
 
-# 重启Gunicorn
-docker-compose exec mcp supervisorctl restart mcp
-
-# 重启工作流进程
-docker-compose exec mcp supervisorctl restart mcp_workflow
-
-# 查看Supervisor日志
-docker-compose exec mcp cat /app/logs/supervisord.log
+# 或重新构建容器
+docker compose down
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ### 5. 日志文件问题
 
 ```bash
 # 查看日志目录中的文件
-docker-compose exec mcp ls -la /app/logs/
+docker exec mcp-mcp-1 ls -la /app/logs/
 
-# 检查日志目录权限
-docker-compose exec mcp stat -c "%a %U:%G" /app/logs
-
-# 如果日志目录权限不正确，可以修复
-docker-compose exec mcp chown -R appuser:appuser /app/logs
-docker-compose exec mcp chmod 755 /app/logs
-
-# 手动创建日志目录（如果不存在）
-docker-compose exec mcp mkdir -p /app/logs
-```
-
-### 6. Python版本问题
-
-如果遇到Python版本兼容性问题：
-
-```bash
-# 查看容器内Python版本
-docker-compose exec mcp python --version
-
-# 修改Dockerfile中的Python基础镜像版本
-# 编辑Dockerfile，修改为：
-# FROM python:3.8-slim 或其他特定版本
-nano Dockerfile
-
-# 重新构建镜像
-docker-compose down
-docker-compose up -d --build
+# 确保日志目录存在且有写入权限
+docker exec mcp-mcp-1 mkdir -p /app/logs
+docker exec mcp-mcp-1 chmod 777 /app/logs
 ```
 
 ## 安全建议
@@ -384,23 +318,3 @@ docker-compose up -d --build
 5. 设置应用程序和数据库的定期备份策略
 6. 实施日志轮转以避免磁盘空间耗尽
 7. 监控系统资源使用情况，设置警报通知
-
-## 系统监控设置
-
-配置简单的系统监控：
-
-```bash
-# 安装基本监控工具
-apt-get update
-apt-get install -y htop iotop sysstat
-
-# 配置基本资源监控
-cat > /etc/cron.d/mcp_monitor << 'EOF'
-*/5 * * * * root bash -c 'echo -e "\n\n===== $(date) =====\n" >> /opt/mcp/logs/system_monitor.log && free -m >> /opt/mcp/logs/system_monitor.log && echo -e "\n" >> /opt/mcp/logs/system_monitor.log && df -h >> /opt/mcp/logs/system_monitor.log && echo -e "\n" >> /opt/mcp/logs/system_monitor.log && docker stats --no-stream >> /opt/mcp/logs/system_monitor.log'
-EOF
-chmod 644 /etc/cron.d/mcp_monitor
-```
-
-## 联系方式
-
-如有任何部署问题，请联系：<your-contact-info> 

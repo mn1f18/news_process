@@ -33,6 +33,7 @@ CREATE_TABLES_SQL = [
         content LONGTEXT,
         event_tags JSON,
         space_tags JSON,
+        impact_factors JSON,
         cat_tags JSON,
         publish_time DATE,
         importance VARCHAR(20),
@@ -59,11 +60,7 @@ CREATE_TABLES_SQL = [
 ]
 
 # 示例数据
-SAMPLE_HOMEPAGE_DATA = [
-    ("https://example.com/agriculture-news", "Example News", "Agriculture news site"),
-    ("https://example.com/farming-policy", "Example Policy", "Farming policy site"),
-    ("https://example.com/weather-impact", "Example Weather", "Weather impact on farming")
-]
+SAMPLE_HOMEPAGE_DATA = []
 
 def create_tables():
     """创建MySQL数据库和表格"""
@@ -99,7 +96,7 @@ def create_tables():
         count = cursor.fetchone()[0]
         
         # 如果表是空的，插入示例数据
-        if count == 0:
+        if count == 0 and len(SAMPLE_HOMEPAGE_DATA) > 0:
             logger.info("插入示例homepage_urls数据...")
             cursor.executemany(
                 "INSERT INTO homepage_urls (link, source, note) VALUES (%s, %s, %s)",
